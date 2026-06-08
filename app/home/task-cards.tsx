@@ -56,6 +56,23 @@ export function TaskCards({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [top?.id]);
 
+  // primera vez: un empujoncito sutil para mostrar que la tarjeta se desliza a los lados
+  useEffect(() => {
+    if (typeof window === 'undefined' || !top) return;
+    if (localStorage.getItem('cresco_cards_hint') === '1') return;
+    localStorage.setItem('cresco_cards_hint', '1');
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const seq: [number, { x: number; y: number }][] = [
+      [650, { x: 42, y: 0 }],
+      [950, { x: -34, y: 0 }],
+      [1220, { x: 16, y: 0 }],
+      [1460, { x: 0, y: 0 }],
+    ];
+    const timers = seq.map(([t, v]) => window.setTimeout(() => setD(v), t));
+    return () => timers.forEach((id) => window.clearTimeout(id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const commit = (dir: 'done' | 'skip') => {
     if (!top || leaving) return;
     const id = top.id;
@@ -169,6 +186,7 @@ export function TaskCards({
                 transition: dragging && isTop ? 'none' : 'transform .36s cubic-bezier(.22,1,.36,1), opacity .36s',
                 opacity: isLeaving ? 0 : 1,
                 zIndex: 10 - depth,
+                cursor: isTop ? (dragging ? 'grabbing' : 'grab') : undefined,
               };
               const content = t.notionId ? (cache[t.notionId] ?? null) : [];
               const ph = phaseOf(t.name);
