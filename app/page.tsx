@@ -15,12 +15,14 @@ export default async function Home() {
   let name = 'crescō';
   let area: string | null = null;
   let pageId: string | null = null;
+  let email: string | null = null;
 
   if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    email = user?.email ?? null;
     const member = user?.email ? await getTeamMember(user.email) : null;
     name =
       member?.name ??
@@ -32,7 +34,7 @@ export default async function Home() {
     pageId = member?.pageId ?? null;
   }
 
-  const tasks = await getOnboardingTasks(pageId);
+  const { tasks, error } = await getOnboardingTasks(pageId);
 
-  return <OnboardingHome name={name} area={area} tasks={tasks} />;
+  return <OnboardingHome name={name} area={area} tasks={tasks} error={error} email={email} />;
 }

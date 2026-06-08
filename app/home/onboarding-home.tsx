@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toggleTaskAction } from '@/app/actions';
-import { PHASES, phaseOf, type OnbItem } from '@/lib/onboarding';
+import { supabaseBrowser } from '@/lib/supabase/client';
+import { PHASES, phaseOf, type OnbItem, type OnboardingError } from '@/lib/onboarding';
 import { TaskReader } from './task-reader';
 import { TaskCards } from './task-cards';
 import { OnboardingIntro } from './onboarding-intro';
@@ -18,16 +20,30 @@ export function OnboardingHome({
   name,
   area,
   tasks: initial,
+  error = null,
+  email = null,
 }: {
   name: string;
   area: string | null;
   tasks: OnbItem[];
+  error?: OnboardingError;
+  email?: string | null;
 }) {
   const [tasks, setTasks] = useState(initial);
   const [open, setOpen] = useState<OnbItem | null>(null);
   const [view, setView] = useState<'list' | 'cards'>('cards'); // arranca en cartas
   const [introDone, setIntroDone] = useState(true); // se corrige en el montaje
   const [, startTransition] = useTransition();
+  const router = useRouter();
+
+  const onLogout = async () => {
+    try {
+      await supabaseBrowser().auth.signOut();
+    } catch {
+      /* en modo diseño (sin Supabase) igual mandamos al login */
+    }
+    router.replace('/login');
+  };
 
   // restaura el progreso local + la vista preferida + el manifiesto al montar
   useEffect(() => {
@@ -75,6 +91,55 @@ export function OnboardingHome({
 
   const openDone = open ? (tasks.find((t) => t.id === open.id)?.done ?? false) : false;
 
+  const logoutBtn = (
+    <button className={styles.logout} onClick={onLogout} aria-label="Cerrar sesión">
+      <span>salir</span>
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 17l5-5-5-5" /><path d="M15 12H3" /><path d="M21 4v16" />
+      </svg>
+    </button>
+  );
+
+  // si Notion falló o no hay perfil en el equipo: lo decimos claro, no mostramos tareas falsas
+  if (error) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.grain} />
+        <div className={styles.wrap}>
+          <div className={styles.topbar}>
+            <div className={styles.mark}>
+              <span className={styles.dot} />
+              <span>cresc&#333;<span className={styles.d}>.</span></span>
+            </div>
+            {logoutBtn}
+          </div>
+          <div className={styles.errbox}>
+            <div className={styles.errmark}>🌱</div>
+            <h2>{error === 'no-team' ? 'Aún no estás en el equipo' : 'No pudimos cargar tu onboarding'}</h2>
+            <p>
+              {error === 'no-team' ? (
+                <>
+                  Tu cuenta {email ? <b>{email}</b> : ''} entró bien, pero todavía no tiene un perfil en el
+                  equipo. Pídele a quien te invitó que te agregue — o entra con otra cuenta.
+                </>
+              ) : (
+                <>Hubo un problema leyendo tus tareas desde Notion. No es tu culpa; reintenta en un momento.</>
+              )}
+            </p>
+            <div className={styles.erractions}>
+              {error !== 'no-team' && (
+                <button className={styles.errbtn} onClick={() => window.location.reload()}>
+                  Reintentar
+                </button>
+              )}
+              <button className={styles.errghost} onClick={onLogout}>Cambiar de cuenta</button>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   // umbral: "Hola {nombre}" + manifiesto → fase 1 → onboarding (cartas)
   if (!introDone) {
     return <OnboardingIntro firstName={firstName} firstPhase={PHASES[0]} onComplete={finishIntro} />;
@@ -84,9 +149,12 @@ export function OnboardingHome({
     <main className={styles.page}>
       <div className={styles.grain} />
       <div className={styles.wrap}>
-        <div className={styles.mark}>
-          <span className={styles.dot} />
-          <span>cresc&#333;<span className={styles.d}>.</span></span>
+        <div className={styles.topbar}>
+          <div className={styles.mark}>
+            <span className={styles.dot} />
+            <span>cresc&#333;<span className={styles.d}>.</span></span>
+          </div>
+          {logoutBtn}
         </div>
 
         {view === 'list' && (

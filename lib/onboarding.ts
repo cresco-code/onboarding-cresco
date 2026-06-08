@@ -248,7 +248,7 @@ async function queryOnboarding(teamPageId: string): Promise<RawTask[]> {
         { property: 'Team', relation: { contains: teamPageId } },
       ],
     },
-    sorts: [{ property: 'Create', direction: 'ascending' }],
+    sorts: [{ timestamp: 'created_time', direction: 'ascending' }],
     page_size: 50,
   });
   return res.results.flatMap((p) => {
@@ -286,8 +286,18 @@ async function createOnboardingTask(item: SeedItem, teamPageId: string): Promise
  * - kind/embed/steps/CTA se enriquecen por nombre desde la plantilla de código.
  * - Si nunca tuvo tareas, se siembran las estándar en Notion una sola vez.
  */
-export async function getOnboardingTasks(teamPageId: string | null): Promise<OnbItem[]> {
-  if (!NOTION_TOKEN || !teamPageId) return templatePreview(); // sin match → preview local
+/** error null = ok; 'no-team' = logueado pero sin registro en Team; 'notion' = falló la lectura de Notion */
+export type OnboardingError = 'no-team' | 'notion' | null;
+export interface OnboardingData {
+  tasks: OnbItem[];
+  error: OnboardingError;
+}
+
+export async function getOnboardingTasks(teamPageId: string | null): Promise<OnboardingData> {
+  // modo diseño local (sin Notion configurado): preview de plantilla, no es un error
+  if (!NOTION_TOKEN) return { tasks: templatePreview(), error: null };
+  // logueado pero sin registro en Team → no inventamos tareas, lo decimos
+  if (!teamPageId) return { tasks: [], error: 'no-team' };
 
   try {
     let raw = await queryOnboarding(teamPageId);
@@ -303,7 +313,7 @@ export async function getOnboardingTasks(teamPageId: string | null): Promise<Onb
       return i === -1 ? ONBOARDING.length + 1 : i; // extras de Notion (sin plantilla) al final
     };
 
-    return raw
+    const tasks = raw
       .map((t) => {
         const ux = enrich(t.name);
         return {
@@ -324,8 +334,12 @@ export async function getOnboardingTasks(teamPageId: string | null): Promise<Onb
       })
       .sort((a, b) => a._order - b._order)
       .map(({ _order, ...item }) => item);
-  } catch {
-    return templatePreview(); // si Notion falla, no rompemos la experiencia
+
+    return { tasks, error: null };
+  } catch (e) {
+    // NO caemos en preview silencioso: surface real del error (antes esto escondía un sort roto)
+    console.error('[onboarding] fallo leyendo Tasks de Notion:', e);
+    return { tasks: [], error: 'notion' };
   }
 }
 

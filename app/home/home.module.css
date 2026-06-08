@@ -21,6 +21,31 @@
 .mark .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 2.6s var(--ease) infinite}
 .mark .d{color:var(--accent)}
 
+/* barra superior: lockup + salir */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logout{display:inline-flex;align-items:center;gap:7px;border:.5pt solid var(--line);background:transparent;
+  color:var(--ink-soft);font-family:inherit;font-size:13px;font-weight:400;letter-spacing:-.01em;
+  padding:7px 13px;border-radius:99px;cursor:pointer;opacity:0;animation:rise .9s var(--ease) .18s forwards;
+  transition:color .25s var(--ease),border-color .25s var(--ease),background .25s var(--ease)}
+.logout:hover{color:var(--ink);border-color:var(--ink-soft);background:rgba(26,22,18,.025)}
+.logout svg{opacity:.75;transition:transform .3s var(--ease)}
+.logout:hover svg{transform:translateX(2px)}
+
+/* estado de error / sin perfil */
+.errbox{max-width:440px;margin:16vh auto 0;text-align:center;opacity:0;animation:riseblur 1s var(--ease) .15s forwards}
+.errmark{width:48px;height:48px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;
+  background:var(--line-soft);font-size:22px}
+.errbox h2{font-weight:500;font-size:22px;letter-spacing:-.02em;color:var(--ink)}
+.errbox p{margin-top:11px;font-weight:300;font-size:14.5px;line-height:1.6;color:var(--ink-soft)}
+.errbox p b{font-weight:500;color:var(--ink)}
+.erractions{margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.errbtn{border:none;background:var(--ink);color:var(--bg);border-radius:99px;padding:12px 24px;font-family:inherit;
+  font-size:14px;font-weight:500;cursor:pointer;transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.errbtn:hover{transform:translateY(-1px);box-shadow:0 16px 36px -18px rgba(26,22,18,.4)}
+.errghost{border:.5pt solid var(--line);background:transparent;color:var(--ink-soft);border-radius:99px;padding:12px 24px;
+  font-family:inherit;font-size:14px;font-weight:400;cursor:pointer;transition:color .25s var(--ease),border-color .25s var(--ease)}
+.errghost:hover{color:var(--ink);border-color:var(--ink-soft)}
+
 .head{display:flex;align-items:center;justify-content:space-between;gap:28px;margin-top:42px;flex-wrap:wrap}
 .greet{flex:1;min-width:240px}
 .greet .eye{font-weight:300;font-size:13.5px;color:var(--ink-soft);opacity:0;animation:rise .9s var(--ease) .2s forwards}
