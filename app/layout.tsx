@@ -12,17 +12,22 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://onboarding.cresco.so'),
   title: 'crescō · onboarding',
-  description: 'El onboarding del equipo crescō.',
+  description: 'Bienvenido a tu equipo. Tu onboarding en crescō — a tu ritmo.',
   applicationName: 'crescō onboarding',
   authors: [{ name: 'crescō' }],
   robots: { index: false, follow: false },
   openGraph: {
     title: 'crescō · onboarding',
-    description: 'El onboarding del equipo crescō.',
+    description: 'Bienvenido a tu equipo. ¿Listo para crecer?',
     siteName: 'crescō',
     url: 'https://onboarding.cresco.so',
     locale: 'es_ES',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'crescō · onboarding',
+    description: 'Bienvenido a tu equipo. ¿Listo para crecer?',
   },
 };
 

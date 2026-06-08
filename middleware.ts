@@ -1,7 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/lib/supabase/middleware';
 
-const PUBLIC_PATHS = ['/login', '/auth/callback', '/no-access', '/api/auth'];
+const PUBLIC_PATHS = [
+  '/login',
+  '/auth/callback',
+  '/no-access',
+  '/api/auth',
+  '/opengraph-image', // unfurl: los scrapers de preview no están autenticados
+  '/twitter-image',
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
