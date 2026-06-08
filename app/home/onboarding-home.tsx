@@ -9,6 +9,7 @@ import { PHASES, phaseOf, type OnbItem, type OnboardingError } from '@/lib/onboa
 import { TaskReader } from './task-reader';
 import { TaskCards } from './task-cards';
 import { OnboardingIntro } from './onboarding-intro';
+import { fireConfetti } from './confetti';
 import styles from './home.module.css';
 
 const C = 327; // circunferencia del anillo (r=52)
@@ -80,6 +81,14 @@ export function OnboardingHome({
   const firstName = name.split(' ')[0];
 
   const setDone = (item: OnbItem, nextDone: boolean) => {
+    // ¿esta acción completa la sección (fase)? → confetti sutil
+    if (nextDone) {
+      const key = phaseOf(item.name).key;
+      const inPhase = tasks.filter((t) => phaseOf(t.name).key === key);
+      const wasComplete = inPhase.length > 0 && inPhase.every((t) => t.done);
+      const willComplete = inPhase.length > 0 && inPhase.every((t) => (t.id === item.id ? true : t.done));
+      if (!wasComplete && willComplete) fireConfetti({ color: phaseOf(item.name).color });
+    }
     setTasks((ts) => ts.map((x) => (x.id === item.id ? { ...x, done: nextDone } : x)));
     if (item.notionId) {
       startTransition(() => void toggleTaskAction(item.notionId!, nextDone));
