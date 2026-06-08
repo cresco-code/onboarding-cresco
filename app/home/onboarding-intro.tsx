@@ -76,7 +76,7 @@ export function OnboardingIntro({
             style={{ ['--d' as string]: `${0.5 + MANIFESTO.length * 0.22 + 0.25}s` }}
             onClick={() => setSub('phase')}
           >
-            Empezar mi onboarding <span className={styles.mfsArr}>→</span>
+            Estoy listo <span className={styles.mfsArr}>→</span>
           </button>
         </div>
       </div>
@@ -98,7 +98,7 @@ export function OnboardingIntro({
           </p>
         </div>
         <button className={styles.mfsBtn} style={{ ['--d' as string]: '1.2s' }} onClick={() => setSub('manifesto')}>
-          Conoce cómo trabajamos <span className={styles.mfsArr}>→</span>
+          Cómo trabajamos <span className={styles.mfsArr}>→</span>
         </button>
       </div>
     </div>

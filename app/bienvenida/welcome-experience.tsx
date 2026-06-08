@@ -156,7 +156,7 @@ export function WelcomeExperience() {
             style={{ ['--d' as string]: '.7s' }}
             onClick={(e) => { e.stopPropagation(); finish(); }}
           >
-            Entrar al onboarding <span className={styles.arr}>→</span>
+            Comenzar <span className={styles.arr}>→</span>
           </button>
         </section>
       </div>
