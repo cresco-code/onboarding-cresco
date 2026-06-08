@@ -31,10 +31,10 @@ export function fireConfetti(opts: { x?: number; y?: number; color?: string } = 
   if (!ctx) { canvas.remove(); return; }
   ctx.scale(dpr, dpr);
 
-  const N = 26; // pocas = sutil
+  const N = 44; // sutil, pero con cuerpo
   const parts: Part[] = Array.from({ length: N }, (_, i) => {
-    const ang = -Math.PI / 2 + (Math.random() - 0.5) * 1.7; // abanico hacia arriba
-    const sp = 3 + Math.random() * 5;
+    const ang = -Math.PI / 2 + (Math.random() - 0.5) * 1.9; // abanico hacia arriba
+    const sp = 3.4 + Math.random() * 6;
     return {
       x, y,
       vx: Math.cos(ang) * sp + (Math.random() - 0.5) * 1.5,

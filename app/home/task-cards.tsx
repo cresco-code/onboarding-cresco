@@ -84,7 +84,7 @@ export function TaskCards({
   // la transición de fase se va sola tras un momento (o con click)
   useEffect(() => {
     if (!phaseDone) return;
-    const t = window.setTimeout(() => setPhaseDone(null), 2800);
+    const t = window.setTimeout(() => setPhaseDone(null), 3500);
     return () => window.clearTimeout(t);
   }, [phaseDone]);
 
@@ -239,7 +239,7 @@ export function TaskCards({
               </span>
             </div>
             <button className={styles.ptBtn} onClick={() => setPhaseDone(null)}>
-              seguir <span className={styles.mfsArr}>→</span>
+              Seguir <span className={styles.mfsArr}>→</span>
             </button>
           </div>
         </div>
