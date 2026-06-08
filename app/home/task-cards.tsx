@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type CSSProperties } from 'react';
-import { phaseOf, type OnbItem } from '@/lib/onboarding';
+import { phaseOf, type OnbItem, type Phase } from '@/lib/onboarding';
 import type { CBlock } from '@/lib/notion-content';
 import { getTaskContentAction } from '@/app/actions';
 import { TaskBody } from './task-body';
@@ -26,6 +26,7 @@ export function TaskCards({
   const [dragging, setDragging] = useState(false);
   const [leaving, setLeaving] = useState<{ id: string; dir: 'done' | 'skip' } | null>(null);
   const [cache, setCache] = useState<Record<string, CBlock[]>>({});
+  const [phaseDone, setPhaseDone] = useState<{ completed: Phase; next: Phase } | null>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const movedRef = useRef(false);
 
@@ -58,15 +59,34 @@ export function TaskCards({
   const commit = (dir: 'done' | 'skip') => {
     if (!top || leaving) return;
     const id = top.id;
+    const card = top;
     setLeaving({ id, dir });
     setD({ x: dir === 'done' ? 1 : -1, y: 0 });
     window.setTimeout(() => {
-      if (dir === 'done') onDone(top);
-      else setOrder((o) => [...o.filter((x) => x !== id), id]);
+      if (dir === 'done') {
+        // ¿esta carta cierra la fase? → confetti (en setDone) + transición de fase
+        const ph = phaseOf(card.name);
+        const phaseTasks = tasks.filter((x) => phaseOf(x.name).key === ph.key);
+        const completes = phaseTasks.length > 0 && phaseTasks.every((x) => x.id === card.id || x.done);
+        const next = visible.find((v) => v.id !== card.id) ?? null;
+        onDone(card);
+        if (completes && next) {
+          window.setTimeout(() => setPhaseDone({ completed: ph, next: phaseOf(next.name) }), 240);
+        }
+      } else {
+        setOrder((o) => [...o.filter((x) => x !== id), id]);
+      }
       setLeaving(null);
       setD({ x: 0, y: 0 });
     }, 360);
   };
+
+  // la transición de fase se va sola tras un momento (o con click)
+  useEffect(() => {
+    if (!phaseDone) return;
+    const t = window.setTimeout(() => setPhaseDone(null), 2800);
+    return () => window.clearTimeout(t);
+  }, [phaseDone]);
 
   const onDown = (e: RPointerEvent) => {
     if (leaving) return;
@@ -196,6 +216,33 @@ export function TaskCards({
             })}
           </div>
         </>
+      )}
+
+      {phaseDone && (
+        <div className={styles.ptrans} onClick={() => setPhaseDone(null)}>
+          <div className={styles.ptCard} onClick={(e) => e.stopPropagation()}>
+            <div
+              className={styles.ptCheck}
+              style={{ color: phaseDone.completed.color, borderColor: phaseDone.completed.color }}
+            >
+              ✓
+            </div>
+            <div className={styles.ptDone}>
+              Completaste <b style={{ color: phaseDone.completed.color }}>{phaseDone.completed.name}</b>
+            </div>
+            <div className={styles.ptArrow}>↓</div>
+            <div className={styles.ptNext}>
+              <span className={styles.ptNextEye}>sigue</span>
+              <span className={styles.ptNextName} style={{ color: phaseDone.next.color }}>
+                <span className={styles.ptDot} style={{ background: phaseDone.next.color }} />
+                {phaseDone.next.name}
+              </span>
+            </div>
+            <button className={styles.ptBtn} onClick={() => setPhaseDone(null)}>
+              seguir <span className={styles.mfsArr}>→</span>
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
