@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { ProjectExperience } from '@/components/project-experience';
 import { mogosProject } from '@/lib/mogos';
+import { mogosProjectEn } from '@/lib/i18n/mogos-en';
 
 export const metadata = { title: 'crescō · onboarding · mogos' };
 
@@ -16,5 +17,5 @@ export default async function MogosPage() {
     if (!user) redirect('/login');
   }
 
-  return <ProjectExperience data={mogosProject} />;
+  return <ProjectExperience data={mogosProject} dataEn={mogosProjectEn} />;
 }

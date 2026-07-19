@@ -2,6 +2,8 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { makeRepoUrl, type Lens, type AppNode, type ProjectData, type Tech } from '@/lib/project';
+import { useLocale } from '@/lib/i18n/locale-context';
+import { strings } from '@/lib/i18n/strings';
 import styles from './project-experience.module.css';
 
 /** Renderiza **negritas** simples dentro de un string. */
@@ -11,14 +13,6 @@ function rich(text: string) {
   );
 }
 
-const LENS_LABEL: Record<Lens, string> = {
-  que: 'Qué es',
-  datos: 'Los datos',
-  arquitectura: 'Arquitectura',
-  sistema: 'El sistema',
-  arranque: 'Arranque',
-};
-
 /** El recorrido, en orden. Cada lente entrega al siguiente. */
 const LENS_ORDER: Lens[] = ['que', 'datos', 'arquitectura', 'sistema', 'arranque'];
 const nextLens = (l: Lens): Lens | null => {
@@ -27,11 +21,13 @@ const nextLens = (l: Lens): Lens | null => {
 };
 type Handoff = Record<Lens, { title: string; sub: string }>;
 function NextCue({ to, onGo, handoff }: { to: Lens; onGo: (l: Lens) => void; handoff: Handoff }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const h = handoff[to];
   return (
     <div className={styles.introCta}>
       <div className={styles.t}><b>{h.title}</b><small>{h.sub}</small></div>
-      <button className={styles.go} style={{ border: 'none', cursor: 'pointer' }} onClick={() => onGo(to)}>{LENS_LABEL[to]} →</button>
+      <button className={styles.go} style={{ border: 'none', cursor: 'pointer' }} onClick={() => onGo(to)}>{ST.lensLabel[to]} →</button>
     </div>
   );
 }
@@ -41,7 +37,10 @@ interface SearchItem { kind: 'app' | 'tech' | 'modelo' | 'script' | 'doc'; emoji
 const VB = { w: 620, h: 510 };
 const px = (p: [number, number]) => ({ x: (p[0] / 100) * VB.w, y: (p[1] / 100) * VB.h });
 
-export function ProjectExperience({ data }: { data: ProjectData }) {
+export function ProjectExperience({ data: dataEs, dataEn }: { data: ProjectData; dataEn?: ProjectData }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
+  const data = locale === 'en' && dataEn ? dataEn : dataEs;
   const repoUrl = (p: string) => makeRepoUrl(data.repo, p);
   const [lens, setLens] = useState<Lens>('que');
   const [sel, setSel] = useState<string | null>(null); // app id (sistema) o tech id (arquitectura)
@@ -90,10 +89,10 @@ export function ProjectExperience({ data }: { data: ProjectData }) {
 
   const handoff: Handoff = {
     que: { title: '', sub: '' },
-    datos: { title: '¿Listo? Mira el modelo.', sub: 'Los datos que sostienen todo el recorrido.' },
-    arquitectura: { title: '¿Con qué se construye?', sub: 'El stack que mueve esos datos.' },
-    sistema: { title: '¿Cómo se reparte en apps?', sub: `Las ${data.apps.length} apps que hacen funcionar el recorrido.` },
-    arranque: { title: '¿Listo para correrlo?', sub: 'De cero a npm run dev.' },
+    datos: { title: ST.handoffDatosTitle, sub: ST.handoffDatosSub },
+    arquitectura: { title: ST.handoffArqTitle, sub: ST.handoffArqSub },
+    sistema: { title: ST.handoffSisTitle, sub: ST.handoffSisSub(data.apps.length) },
+    arranque: { title: ST.handoffArrTitle, sub: ST.handoffArrSub },
   };
 
   // índice de búsqueda: apps · tech · modelos · scripts · docs
@@ -102,11 +101,11 @@ export function ProjectExperience({ data }: { data: ProjectData }) {
     data.apps.forEach((a) => it.push({ kind: 'app', emoji: a.emoji, label: a.name, sub: a.sub, go: () => { pickLens('sistema'); selectApp(a.id); } }));
     Object.values(data.tech).forEach((t) => it.push({ kind: 'tech', emoji: t.emoji, label: t.name, sub: t.layer, go: () => { pickLens('arquitectura'); selectTech(t.id); } }));
     data.data.forEach((c) => c.models.forEach((m) => it.push({ kind: 'modelo', emoji: m.emoji, label: m.name, sub: m.table, go: () => { pickLens('datos'); setTimeout(() => document.getElementById(`data-ch-${c.id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 90); } })));
-    data.scripts.forEach(([cmd]) => it.push({ kind: 'script', emoji: '⌘', label: cmd, sub: 'arranque', go: () => pickLens('arranque') }));
+    data.scripts.forEach(([cmd]) => it.push({ kind: 'script', emoji: '⌘', label: cmd, sub: ST.firstBoot, go: () => pickLens('arranque') }));
     data.docs.forEach((d) => it.push({ kind: 'doc', emoji: d.emoji, label: d.name, sub: d.path, go: () => window.open(repoUrl(d.path), '_blank') }));
     return it;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, locale]);
 
   // teclado: ⌘K · ←/→ entre lentes · Esc cierra
   useEffect(() => {
@@ -138,7 +137,7 @@ export function ProjectExperience({ data }: { data: ProjectData }) {
         <div className={styles.modes}>
           {LENS_ORDER.map((l) => (
             <button key={l} className={`${styles.mode}${lens === l ? ' ' + styles.on : ''}`} onClick={() => pickLens(l)}>
-              {LENS_LABEL[l]}
+              {ST.lensLabel[l]}
             </button>
           ))}
         </div>
@@ -150,8 +149,8 @@ export function ProjectExperience({ data }: { data: ProjectData }) {
                 key={l}
                 className={`${styles.jdot}${lens === l ? ' ' + styles.jnow : visited.has(l) ? ' ' + styles.jseen : ''}`}
                 onClick={() => pickLens(l)}
-                title={LENS_LABEL[l]}
-                aria-label={LENS_LABEL[l]}
+                title={ST.lensLabel[l]}
+                aria-label={ST.lensLabel[l]}
               />
             ))}
           </div>
@@ -161,7 +160,7 @@ export function ProjectExperience({ data }: { data: ProjectData }) {
       <div className={styles.stage}>
         {/* sidebar */}
         <aside className={styles.side}>
-          <button className={styles.search} onClick={() => setPalette(true)}>⌕ buscar… <span className={styles.k}>⌘K</span></button>
+          <button className={styles.search} onClick={() => setPalette(true)}>⌕ {ST.search} <span className={styles.k}>⌘K</span></button>
           {lens === 'que' && <SidebarIntro data={data} onGo={pickLens} />}
           {lens === 'sistema' && <SidebarSistema data={data} sel={sel} read={read} onPick={selectApp} onBack={close} />}
           {lens === 'arquitectura' && <SidebarArquitectura data={data} sel={sel} onPick={selectTech} onBack={close} />}
@@ -191,8 +190,9 @@ export function ProjectExperience({ data }: { data: ProjectData }) {
 }
 
 /* ---------- ⌘K · command palette ---------- */
-const KIND_LABEL: Record<SearchItem['kind'], string> = { app: 'app', tech: 'tech', modelo: 'modelo', script: 'script', doc: 'doc' };
 function Palette({ items, onClose, onRun }: { items: SearchItem[]; onClose: () => void; onRun: (i: SearchItem) => void }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const [q, setQ] = useState('');
   const [idx, setIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -221,7 +221,7 @@ function Palette({ items, onClose, onRun }: { items: SearchItem[]; onClose: () =
           <input
             ref={inputRef}
             className={styles.palIn}
-            placeholder="Buscar apps, tech, modelos, scripts, docs…"
+            placeholder={ST.searchPlaceholder}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKey}
@@ -229,7 +229,7 @@ function Palette({ items, onClose, onRun }: { items: SearchItem[]; onClose: () =
           <span className={styles.palEsc}>esc</span>
         </div>
         <div className={styles.palList}>
-          {results.length === 0 && <div className={styles.palEmpty}>Nada que coincida con “{q}”.</div>}
+          {results.length === 0 && <div className={styles.palEmpty}>{ST.searchEmpty(q)}</div>}
           {results.map((it, i) => (
             <button
               key={it.kind + it.label}
@@ -240,11 +240,11 @@ function Palette({ items, onClose, onRun }: { items: SearchItem[]; onClose: () =
               <span className={styles.palE}>{it.emoji}</span>
               <span className={styles.palLabel}>{it.label}</span>
               <span className={styles.palSub}>{it.sub}</span>
-              <span className={styles.palKind}>{KIND_LABEL[it.kind]}</span>
+              <span className={styles.palKind}>{ST.kindLabel[it.kind]}</span>
             </button>
           ))}
         </div>
-        <div className={styles.palFoot}><span>↑↓ moverse</span><span>↵ ir</span><span>esc cerrar</span></div>
+        <div className={styles.palFoot}><span>{ST.palMove}</span><span>{ST.palGo}</span><span>{ST.palClose}</span></div>
       </div>
     </div>
   );
@@ -252,6 +252,8 @@ function Palette({ items, onClose, onRun }: { items: SearchItem[]; onClose: () =
 
 /* ---------- qué es · portada ---------- */
 function CanvasIntro({ data, onGo, handoff }: { data: ProjectData; onGo: (l: Lens) => void; handoff: Handoff }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const o = data.overview;
   return (
     <div className={`${styles.canvas} ${styles.canvasIntro}`}>
@@ -275,7 +277,7 @@ function CanvasIntro({ data, onGo, handoff }: { data: ProjectData; onGo: (l: Len
           ))}
         </div>
 
-        <div className={styles.introLbl}>quiénes lo usan</div>
+        <div className={styles.introLbl}>{ST.whoUses}</div>
         <div className={styles.who}>
           {o.who.map((w) => (
             <div key={w.name} className={styles.whoCard}>
@@ -285,7 +287,7 @@ function CanvasIntro({ data, onGo, handoff }: { data: ProjectData; onGo: (l: Len
           ))}
         </div>
 
-        <div className={styles.introLbl}>el rol de crescō</div>
+        <div className={styles.introLbl}>{ST.crescoRole}</div>
         <div className={styles.role}><span className={styles.ic}>🌱</span><p>{o.role}</p></div>
 
         <NextCue to={nextLens('que')!} onGo={onGo} handoff={handoff} />
@@ -294,16 +296,18 @@ function CanvasIntro({ data, onGo, handoff }: { data: ProjectData; onGo: (l: Len
   );
 }
 function SidebarIntro({ data, onGo }: { data: ProjectData; onGo: (l: Lens) => void }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const icons: Record<Lens, string> = { que: '◉', datos: '◈', arquitectura: '▤', sistema: '◍', arranque: '🟢' };
   return (
     <>
-      <div className={styles.rl}>el recorrido</div>
+      <div className={styles.rl}>{ST.theJourney}</div>
       {LENS_ORDER.map((l) => (
         <button key={l} className={`${styles.navi}${l === 'que' ? ' ' + styles.on : ''}`} onClick={() => onGo(l)}>
-          <span className={styles.e}>{icons[l]}</span> {LENS_LABEL[l]}
+          <span className={styles.e}>{icons[l]}</span> {ST.lensLabel[l]}
         </button>
       ))}
-      <div className={styles.rl}>de un vistazo</div>
+      <div className={styles.rl}>{ST.atAGlance}</div>
       <div className={styles.pkrow}>{data.glance.map((p) => <span key={p} className={styles.pk}>{p}</span>)}</div>
     </>
   );
@@ -311,6 +315,8 @@ function SidebarIntro({ data, onGo }: { data: ProjectData; onGo: (l: Lens) => vo
 
 /* ---------- sistema ---------- */
 function CanvasSistema({ data, sel, read, onSelect, onGo }: { data: ProjectData; sel: string | null; read: Set<string>; onSelect: (id: string) => void; onGo: (l: Lens) => void }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const apps = data.apps;
   const hub = apps.find((a) => a.hub);
   const next = nextLens('sistema')!;
@@ -338,33 +344,35 @@ function CanvasSistema({ data, sel, read, onSelect, onGo }: { data: ProjectData;
             </button>
           );
         })}
-        <div className={styles.hint}>Todo {data.slug}, conectado · <b>toca un nodo</b><br />El sidebar se mueve contigo.</div>
+        <div className={styles.hint}>{ST.hintConnected(data.slug)} · <b>{ST.hintTapNode}</b><br />{ST.hintSidebarMoves}</div>
       </div>
-      <button className={styles.mapNext} onClick={() => onGo(next)}>Siguiente · {LENS_LABEL[next]} →</button>
+      <button className={styles.mapNext} onClick={() => onGo(next)}>{ST.next} · {ST.lensLabel[next]} →</button>
     </div>
   );
 }
 function SidebarSistema({ data, sel, read, onPick, onBack }: { data: ProjectData; sel: string | null; read: Set<string>; onPick: (id: string) => void; onBack: () => void }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const apps = data.apps;
   const app = apps.find((a) => a.id === sel);
   if (!app) return (
     <>
-      <div className={styles.rl}>el sistema</div>
+      <div className={styles.rl}>{ST.theSystem}</div>
       {apps.map((a) => (
         <button key={a.id} className={`${styles.navi}${read.has(a.id) ? ' ' + styles.done : ''}`} onClick={() => onPick(a.id)}>
           <span className={styles.e}>{a.emoji}</span> {a.name}<span className={styles.nvdot} />
         </button>
       ))}
-      <div className={styles.rl}>packages</div>
+      <div className={styles.rl}>{ST.packages}</div>
       <div className={styles.pkrow}>{data.packages.map((p) => <span key={p} className={styles.pk}>{p}</span>)}</div>
     </>
   );
   return (
     <>
-      <button className={styles.back} onClick={onBack}>← el sistema</button>
+      <button className={styles.back} onClick={onBack}>{ST.back}</button>
       <div className={styles.ctxbig}><span className={styles.e}>{app.emoji}</span><span className={styles.n}>{app.name}</span></div>
       <div className={styles.ctxtag}>{app.sub}</div>
-      <div className={styles.rl}>saltar a otra app</div>
+      <div className={styles.rl}>{ST.jumpToApp}</div>
       {apps.filter((a) => a.id !== app.id).map((a) => (
         <button key={a.id} className={styles.navi} onClick={() => onPick(a.id)}><span className={styles.e}>{a.emoji}</span> {a.name}</button>
       ))}
@@ -372,23 +380,25 @@ function SidebarSistema({ data, sel, read, onPick, onBack }: { data: ProjectData
   );
 }
 function ReaderApp({ data, app, onClose }: { data: ProjectData; app: AppNode; onClose: () => void }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const repoUrl = (p: string) => makeRepoUrl(data.repo, p);
   return (
     <div className={styles.rd}>
-      <div className={styles.rdCrumb}>{data.slug} / sistema / <b>{app.name}</b><button className={styles.rdClose} onClick={onClose}>✕</button></div>
+      <div className={styles.rdCrumb}>{data.slug} / {ST.theSystem} / <b>{app.name}</b><button className={styles.rdClose} onClick={onClose}>✕</button></div>
       <div className={styles.rdHh}><div className={styles.rdHi}>{app.emoji}</div><div><h1>{app.name}</h1><div className={styles.rdSub}>{app.sub}</div></div></div>
       <p className={styles.b2} style={{ marginTop: 8 }}>{rich(app.ess)}</p>
-      <div className={styles.rdLbl}>qué hace</div><p className={styles.b2}>{rich(app.qhace)}</p>
-      <div className={styles.rdLbl}>cómo encaja</div><div className={styles.conn}>{app.conn.map((c, i) => <span key={i} className={styles.connT}>{c}</span>)}</div>
-      <div className={styles.rdLbl}>lo que importa leer</div>
+      <div className={styles.rdLbl}>{ST.whatItDoes}</div><p className={styles.b2}>{rich(app.qhace)}</p>
+      <div className={styles.rdLbl}>{ST.howItFits}</div><div className={styles.conn}>{app.conn.map((c, i) => <span key={i} className={styles.connT}>{c}</span>)}</div>
+      <div className={styles.rdLbl}>{ST.whatToRead}</div>
       <div className={styles.files}>{app.files.map((f, i) => (
         <a key={i} className={styles.fl} href={repoUrl(f[0])} target="_blank" rel="noreferrer"><div className={styles.p}>{f[0]} ↗</div><div className={styles.d}>{f[1]}</div></a>
       ))}</div>
-      <div className={styles.rdLbl}>córrelo</div><div className={styles.code}>{app.run}</div>
+      <div className={styles.rdLbl}>{ST.runIt}</div><div className={styles.code}>{app.run}</div>
       <div className={styles.exit}>
-        <div className={styles.t}>¿Lo entendiste? Ve al código.</div>
-        <div className={styles.s}>Ya tienes el mapa mental de {app.name}.</div>
-        <a className={styles.go} href={repoUrl(app.repo)} target="_blank" rel="noreferrer">abrir <span className={styles.mono}>{app.repo}</span> ↗</a>
+        <div className={styles.t}>{ST.exitUnderstood}</div>
+        <div className={styles.s}>{ST.exitMentalMap(app.name)}</div>
+        <a className={styles.go} href={repoUrl(app.repo)} target="_blank" rel="noreferrer">{ST.open} <span className={styles.mono}>{app.repo}</span> ↗</a>
       </div>
     </div>
   );
@@ -396,12 +406,14 @@ function ReaderApp({ data, app, onClose }: { data: ProjectData; app: AppNode; on
 
 /* ---------- arquitectura ---------- */
 function CanvasArquitectura({ data, sel, onSelect, onGo, handoff }: { data: ProjectData; sel: string | null; onSelect: (id: string) => void; onGo: (l: Lens) => void; handoff: Handoff }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const { layers, integ, tech } = data;
   return (
     <div className={`${styles.canvas} ${styles.canvasStack}`}>
       <div className={styles.archlegend}>
-        <span><b>arquitectura</b> · De lo que el usuario toca, al cimiento</span>
-        <span>▤ Capas · ↓ habla con · <b>toca un tech</b> para entrar</span>
+        <span>{rich(ST.archLegend1)}</span>
+        <span>{rich(ST.archLegend2)}</span>
       </div>
       <div className={styles.stack}>
         {layers.map((L, i) => (
@@ -413,13 +425,13 @@ function CanvasArquitectura({ data, sel, onSelect, onGo, handoff }: { data: Proj
               </div>
               {i === 0 && integ.length > 0 ? (
                 <div className={styles.raili}>
-                  <div className={styles.lh2}>integraciones</div>
+                  <div className={styles.lh2}>{ST.integrations}</div>
                   {integ.map((id) => tech[id] && <Chip key={id} tech={tech[id]} sel={sel} onSelect={onSelect} />)}
                 </div>
               ) : <div />}
             </div>
             {i < layers.length - 1 && (
-              <div className={styles.layerwrap}><div className={styles.flowdown}>↓<small>habla con</small></div><div /></div>
+              <div className={styles.layerwrap}><div className={styles.flowdown}>↓<small>{ST.talksTo}</small></div><div /></div>
             )}
           </Fragment>
         ))}
@@ -436,39 +448,43 @@ function Chip({ tech, sel, onSelect }: { tech: Tech; sel: string | null; onSelec
   );
 }
 function SidebarArquitectura({ data, sel, onPick, onBack }: { data: ProjectData; sel: string | null; onPick: (id: string) => void; onBack: () => void }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const { layers, tech } = data;
   const t = sel ? tech[sel] : null;
   if (!t) return (
     <>
-      <div className={styles.rl}>capas</div>
+      <div className={styles.rl}>{ST.layers}</div>
       {layers.map((L) => <div key={L.id} className={styles.navi} style={{ cursor: 'default' }}><span className={styles.e}>▤</span> {L.id}</div>)}
-      <div className={styles.rl}>todo el stack</div>
+      <div className={styles.rl}>{ST.wholeStack}</div>
       {Object.values(tech).map((x) => <button key={x.id} className={styles.navi} onClick={() => onPick(x.id)}><span className={styles.e}>{x.emoji}</span> {x.name}</button>)}
     </>
   );
   const sib = Object.values(tech).filter((x) => x.layer === t.layer && x.id !== t.id);
   return (
     <>
-      <button className={styles.back} onClick={onBack}>← todo el stack</button>
+      <button className={styles.back} onClick={onBack}>{ST.backToStack}</button>
       <div className={styles.ctxbig}><span className={styles.e}>{t.emoji}</span><span className={styles.n}>{t.name}</span></div>
-      <div className={styles.ctxtag}>capa · {t.layer}</div>
-      {sib.length > 0 && <><div className={styles.rl}>en la misma capa</div>{sib.map((x) => <button key={x.id} className={styles.navi} onClick={() => onPick(x.id)}><span className={styles.e}>{x.emoji}</span> {x.name}</button>)}</>}
+      <div className={styles.ctxtag}>{ST.layer} · {t.layer}</div>
+      {sib.length > 0 && <><div className={styles.rl}>{ST.sameLayer}</div>{sib.map((x) => <button key={x.id} className={styles.navi} onClick={() => onPick(x.id)}><span className={styles.e}>{x.emoji}</span> {x.name}</button>)}</>}
     </>
   );
 }
 function ReaderTech({ data, tech, onClose }: { data: ProjectData; tech: Tech; onClose: () => void }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const repoUrl = (p: string) => makeRepoUrl(data.repo, p);
   return (
     <div className={styles.rd}>
-      <div className={styles.rdCrumb}>{data.slug} / arquitectura / <b>{tech.name}</b><button className={styles.rdClose} onClick={onClose}>✕</button></div>
-      <div className={styles.rdHh}><div className={styles.rdHi}>{tech.emoji}</div><div><h1>{tech.name}</h1><div className={styles.rdSub}>capa · {tech.layer} · {tech.tag}</div></div></div>
-      <div className={styles.rdLbl}>qué es</div><p className={styles.b2}>{rich(tech.ess)}</p>
-      <div className={styles.rdLbl}>por qué en {data.slug}</div><p className={styles.b2}>{rich(tech.why)}</p>
-      <div className={styles.rdLbl}>dónde vive</div><div className={styles.where}>{tech.where}</div>
+      <div className={styles.rdCrumb}>{data.slug} / {ST.lensLabel.arquitectura} / <b>{tech.name}</b><button className={styles.rdClose} onClick={onClose}>✕</button></div>
+      <div className={styles.rdHh}><div className={styles.rdHi}>{tech.emoji}</div><div><h1>{tech.name}</h1><div className={styles.rdSub}>{ST.layer} · {tech.layer} · {tech.tag}</div></div></div>
+      <div className={styles.rdLbl}>{ST.whatIsIt}</div><p className={styles.b2}>{rich(tech.ess)}</p>
+      <div className={styles.rdLbl}>{ST.whyIn(data.slug)}</div><p className={styles.b2}>{rich(tech.why)}</p>
+      <div className={styles.rdLbl}>{ST.whereItLives}</div><div className={styles.where}>{tech.where}</div>
       {tech.repo && (
         <div className={styles.exit}>
-          <div className={styles.t}>Ve al código</div><div className={styles.s}>Ábrelo en el repo de {data.slug}.</div>
-          <a className={styles.go} href={repoUrl(tech.repo)} target="_blank" rel="noreferrer">abrir <span className={styles.mono}>{tech.repo}</span> ↗</a>
+          <div className={styles.t}>{ST.goToCode}</div><div className={styles.s}>{ST.openInRepo(data.slug)}</div>
+          <a className={styles.go} href={repoUrl(tech.repo)} target="_blank" rel="noreferrer">{ST.open} <span className={styles.mono}>{tech.repo}</span> ↗</a>
         </div>
       )}
     </div>
@@ -477,6 +493,8 @@ function ReaderTech({ data, tech, onClose }: { data: ProjectData; tech: Tech; on
 
 /* ---------- los datos · recorrido ---------- */
 function CanvasData({ data, onActive, onGo, handoff }: { data: ProjectData; onActive: (id: string) => void; onGo: (l: Lens) => void; handoff: Handoff }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const repoUrl = (p: string) => makeRepoUrl(data.repo, p);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -499,11 +517,11 @@ function CanvasData({ data, onActive, onGo, handoff }: { data: ProjectData; onAc
     <div className={`${styles.canvas} ${styles.canvasData}`} ref={ref}>
       <div className={styles.dataWrap}>
         <div className={styles.dataIntro}>
-          <div className={styles.dataKick}>el modelo</div>
-          <h1>El modelo de datos</h1>
-          <p>Una sola base de datos sostiene a {data.slug}. {data.dataTotal} modelos que se leen como una historia — {data.dataHook}.</p>
-          <div className={styles.dataStat}><span>{data.dataTotal} modelos</span><span>1 esquema · Prisma</span><span>Postgres · Supabase</span></div>
-          <div className={styles.dataScrollHint}>↓ Baja para recorrerlo</div>
+          <div className={styles.dataKick}>{ST.dataModel}</div>
+          <h1>{ST.dataModelTitle}</h1>
+          <p>{ST.dataIntro(data.slug, data.dataTotal, data.dataHook)}</p>
+          <div className={styles.dataStat}><span>{ST.dataStat1(data.dataTotal)}</span><span>{ST.dataStat2}</span><span>{ST.dataStat3}</span></div>
+          <div className={styles.dataScrollHint}>{ST.dataScrollHint}</div>
         </div>
 
         {data.data.map((c) => (
@@ -531,12 +549,12 @@ function CanvasData({ data, onActive, onGo, handoff }: { data: ProjectData; onAc
         ))}
 
         <div className={styles.dataMore}>
-          <div className={styles.lbl}>y además</div>
-          <h3>Hay más que el recorrido</h3>
-          <p>Este tour cubre el núcleo. El esquema completo suma {data.dataTotal} modelos — también:</p>
+          <div className={styles.lbl}>{ST.dataMoreLbl}</div>
+          <h3>{ST.dataMoreTitle}</h3>
+          <p>{ST.dataMoreBody(data.dataTotal)}</p>
           <div className={styles.moreChips}>{data.dataMore.map((x) => <span key={x} className={styles.moreChip}>{x}</span>)}</div>
           <div className={styles.dataGo}>
-            <a href={repoUrl(data.schemaFile)} target="_blank" rel="noreferrer">Leer el esquema completo <span className={styles.mono2}>{data.schemaFile}</span> ↗</a>
+            <a href={repoUrl(data.schemaFile)} target="_blank" rel="noreferrer">{ST.readFullSchema} <span className={styles.mono2}>{data.schemaFile}</span> ↗</a>
           </div>
         </div>
 
@@ -547,82 +565,87 @@ function CanvasData({ data, onActive, onGo, handoff }: { data: ProjectData; onAc
   );
 }
 function SidebarData({ data, active }: { data: ProjectData; active: string }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const jump = (id: string) => document.getElementById(`data-ch-${id}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   return (
     <>
-      <div className={styles.rl}>capítulos</div>
+      <div className={styles.rl}>{ST.chapters}</div>
       {data.data.map((c) => (
         <button key={c.id} className={`${styles.chap}${active === c.id ? ' ' + styles.on : ''}`} onClick={() => jump(c.id)}>
           <span className={styles.cn}>{c.n}</span> {c.title}
         </button>
       ))}
-      <div className={styles.rl}>de un vistazo</div>
-      <div className={styles.pkrow}>{[`${data.dataTotal} modelos`, 'Prisma', 'Postgres'].map((p) => <span key={p} className={styles.pk}>{p}</span>)}</div>
+      <div className={styles.rl}>{ST.atAGlance}</div>
+      <div className={styles.pkrow}>{[ST.dataStat1(data.dataTotal), 'Prisma', 'Postgres'].map((p) => <span key={p} className={styles.pk}>{p}</span>)}</div>
     </>
   );
 }
 
 /* ---------- arranque ---------- */
 function SidebarArranque() {
-  const items = ['requisitos', 'variables de entorno', 'cambiar de entorno', 'arrancar', 'documentación'];
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   return (
     <>
-      <div className={styles.rl}>día cero</div>
-      <div className={styles.navi}><span className={styles.e}>🔑</span> accesos</div>
-      <div className={`${styles.navi} ${styles.on}`}><span className={styles.e}>🟢</span> primer arranque</div>
-      <div className={styles.rl}>en esta página</div>
-      {items.map((x) => <div key={x} className={styles.navi} style={{ cursor: 'default', fontSize: 12 }}><span className={styles.e}>◦</span> {x}</div>)}
+      <div className={styles.rl}>{ST.dayZero}</div>
+      <div className={styles.navi}><span className={styles.e}>🔑</span> {ST.access}</div>
+      <div className={`${styles.navi} ${styles.on}`}><span className={styles.e}>🟢</span> {ST.firstBoot}</div>
+      <div className={styles.rl}>{ST.onThisPage}</div>
+      {ST.bootItems.map((x) => <div key={x} className={styles.navi} style={{ cursor: 'default', fontSize: 12 }}><span className={styles.e}>◦</span> {x}</div>)}
     </>
   );
 }
 function CanvasArranque({ data }: { data: ProjectData }) {
+  const { locale } = useLocale();
+  const ST = strings(locale).project;
   const repoUrl = (p: string) => makeRepoUrl(data.repo, p);
   return (
     <div className={`${styles.canvas} ${styles.canvasDoc}`}>
       <div className={styles.doc}>
-        <div className={styles.docCrumb}>{data.slug} / día cero / <b>primer arranque</b></div>
-        <div className={styles.docHrow}><div className={styles.docIc}>🟢</div><h1>Primer arranque</h1></div>
-        <p className={styles.docEss}>De cero a <b>npm run dev</b> con todo el monorepo corriendo. Tres cosas: requisitos, las llaves (vía 1Password) y el comando.</p>
+        <div className={styles.docCrumb}>{data.slug} / {ST.bootCrumb} / <b>{ST.firstBoot}</b></div>
+        <div className={styles.docHrow}><div className={styles.docIc}>🟢</div><h1>{ST.bootTitle}</h1></div>
+        <p className={styles.docEss}>{rich(ST.bootEss)}</p>
 
         <div className={styles.docSec}>
-          <div className={styles.docLbl}>requisitos</div>
-          <p className="soft" style={{ color: 'var(--ink-soft)' }}><b>Node 20+</b> · <b>npm 10.8.3</b> (lo fija el repo) · <b>git</b> con acceso a <span className={styles.mono}>{data.repoName}</span> · y <b>1Password</b> con acceso a la bóveda del equipo. Pídele a tu buddy que te sume el día cero.</p>
+          <div className={styles.docLbl}>{ST.reqLbl}</div>
+          <p className="soft" style={{ color: 'var(--ink-soft)' }}>{rich(ST.reqBody(data.repoName))}</p>
         </div>
 
         <div className={styles.docSec}>
-          <div className={styles.docLbl}>variables de entorno · vía 1Password</div>
-          <p style={{ color: 'var(--ink-soft)', fontSize: 15, lineHeight: 1.66 }}>Las llaves <b>no viven en el repo ni se comparten por texto</b>. Viven en la <b>bóveda de {data.vault} en 1Password</b> — la única fuente de verdad.</p>
-          <div className={styles.cl}><span className={styles.ic}>🔐</span><p>Abre <b>1Password → bóveda “{data.vault}”</b> y copia el <span className={styles.mono}>.env</span> de cada app, o usa el CLI: <span className={styles.mono}>op inject -i .env.tpl -o .env</span>. El repo trae <span className={styles.mono}>.env.test.example</span> como referencia de <b>qué variables existen</b> — nunca con valores reales.</p></div>
-          <div className={`${styles.cl} ${styles.warn}`} style={{ marginTop: 8 }}><span className={styles.ic}>⚠️</span><p>Nunca commitees un <span className={styles.mono}>.env</span> con llaves. Si una se filtra, se <b>rota</b> en 1Password.</p></div>
+          <div className={styles.docLbl}>{ST.envLbl}</div>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 15, lineHeight: 1.66 }}>{rich(ST.envBody(data.vault))}</p>
+          <div className={styles.cl}><span className={styles.ic}>🔐</span><p>{rich(ST.envHow(data.vault))}</p></div>
+          <div className={`${styles.cl} ${styles.warn}`} style={{ marginTop: 8 }}><span className={styles.ic}>⚠️</span><p>{rich(ST.envWarn)}</p></div>
         </div>
 
         <div className={styles.docSec}>
-          <div className={styles.docLbl}>cambiar de entorno</div>
-          <p style={{ color: 'var(--ink-soft)', fontSize: 15, lineHeight: 1.66 }}>El monorepo apunta a un entorno con un script — no edites el <span className={styles.mono}>.env</span> a mano:</p>
-          <div className={styles.code}><span className={styles.c}># lo corren por ti los npm run, pero también a mano:</span>{'\n'}bash scripts/switch-env.sh dev <span className={styles.g}># apunta todo a dev</span></div>
+          <div className={styles.docLbl}>{ST.switchEnvLbl}</div>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 15, lineHeight: 1.66 }}>{ST.switchEnvBody}</p>
+          <div className={styles.code}><span className={styles.c}>{ST.switchEnvComment}</span>{'\n'}bash scripts/switch-env.sh dev <span className={styles.g}>{ST.switchEnvDevComment}</span></div>
         </div>
 
         <div className={styles.docSec}>
-          <div className={styles.docLbl}>arrancar</div>
-          <div className={styles.code}><span className={styles.c}># 1 · instala (npm workspaces)</span>{'\n'}npm install{'\n\n'}<span className={styles.c}># 2 · levanta TODO en dev</span>{'\n'}npm run dev <span className={styles.g}># = switch-env.sh dev + turbo dev</span></div>
-          <p style={{ color: 'var(--ink-soft)', fontSize: 15, lineHeight: 1.66, marginTop: 14 }}>Los modos se diferencian en <b>a qué entorno apuntan</b> — los tres levantan con <span className={styles.mono}>turbo dev</span>:</p>
+          <div className={styles.docLbl}>{ST.startLbl}</div>
+          <div className={styles.code}><span className={styles.c}>{ST.installComment}</span>{'\n'}npm install{'\n\n'}<span className={styles.c}>{ST.devComment}</span>{'\n'}npm run dev <span className={styles.g}>{ST.devSubComment}</span></div>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 15, lineHeight: 1.66, marginTop: 14 }}>{rich(ST.modesBody)}</p>
           <div className={styles.scripts}>{data.scripts.map(([cmd, d]) => (
             <div key={cmd} className={styles.scr}><span className={styles.cmd}>{cmd}</span><span className={styles.d}>{rich(d)}</span></div>
           ))}</div>
-          <div className={styles.cl} style={{ marginTop: 12 }}><span className={styles.ic}>🌱</span><p>Cada app sale en su puerto ({data.ports}). <b>turbo</b> los corre en paralelo desde la raíz.</p></div>
+          <div className={styles.cl} style={{ marginTop: 12 }}><span className={styles.ic}>🌱</span><p>{rich(ST.portsBody(data.ports))}</p></div>
         </div>
 
         <div className={styles.docSec}>
-          <div className={styles.docLbl}>documentación</div>
-          <p style={{ color: 'var(--ink-soft)', fontSize: 15, marginBottom: 14 }}>Lo que vale leer, en el repo (clic = abrir):</p>
+          <div className={styles.docLbl}>{ST.docsLbl}</div>
+          <p style={{ color: 'var(--ink-soft)', fontSize: 15, marginBottom: 14 }}>{ST.docsBody}</p>
           <div className={styles.docs}>{data.docs.map((d) => (
             <a key={d.path} className={styles.dl} href={repoUrl(d.path)} target="_blank" rel="noreferrer"><span className={styles.e}>{d.emoji}</span><span className={styles.nm}>{d.name}<small>{d.path}</small></span><span className={styles.ar}>↗</span></a>
           ))}</div>
         </div>
 
         <div className={styles.exit} style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 40 }}>
-          <div style={{ flex: 1 }}><div className={styles.t}>Eso es {data.slug}, de punta a punta.</div><div className={styles.s}>Ya tienes el mapa completo. Ahora, al código.</div></div>
-          <a className={styles.go} href={repoUrl('')} target="_blank" rel="noreferrer">Abrir el repo ↗</a>
+          <div style={{ flex: 1 }}><div className={styles.t}>{ST.exitFull(data.slug)}</div><div className={styles.s}>{ST.exitFullSub}</div></div>
+          <a className={styles.go} href={repoUrl('')} target="_blank" rel="noreferrer">{ST.openRepo} ↗</a>
         </div>
       </div>
     </div>
