@@ -15,13 +15,27 @@ const Ctx = createContext<LocaleCtx>({
   toggleLocale: () => {},
 });
 
+/** sin preferencia guardada: default por el idioma del navegador (no geo-IP) — español si el navegador es español, inglés para cualquier otro (cubre USA/Europa y cualquier visitante no hispanohablante) */
+function detectLocale(): Locale {
+  if (typeof navigator === 'undefined') return DEFAULT_LOCALE;
+  const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
+  const primary = (langs[0] ?? '').toLowerCase();
+  return primary.startsWith('es') ? 'es' : 'en';
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
   // arranca en 'es' (igual que el server) y se corrige al montar, como el resto de las preferencias locales
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
 
   useEffect(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem(LOCALE_STORAGE_KEY) : null;
-    if (saved === 'es' || saved === 'en') setLocaleState(saved);
+    if (saved === 'es' || saved === 'en') {
+      setLocaleState(saved);
+    } else {
+      // primera visita, sin preferencia guardada todavía: detecta y NO persiste —
+      // así sigue detectando en cada visita hasta que la persona toque el toggle a propósito
+      setLocaleState(detectLocale());
+    }
   }, []);
 
   useEffect(() => {
