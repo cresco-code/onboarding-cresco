@@ -9,6 +9,7 @@ const TASKS_DATA_SOURCE_ID =
 const DESIGN = process.env.NEXT_PUBLIC_DESIGN_URL ?? 'https://cresco-design.pages.dev';
 const ONBOARDING_TYPE = '🚀 Onboarding';
 const DONE_STATES = ['Done', 'Archived'];
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 export interface OnbItem {
   id: string;
@@ -360,7 +361,11 @@ export async function getOnboardingTasks(teamPageId: string | null): Promise<Onb
   // modo diseño local (sin Notion configurado): preview de plantilla, no es un error
   if (!NOTION_TOKEN) return { tasks: templatePreview(), error: null };
   // logueado pero sin registro en Team → no inventamos tareas, lo decimos
-  if (!teamPageId) return { tasks: [], error: 'no-team' };
+  // (excepto en modo demo: muestra la plantilla para poder demostrar el flujo sin invite real)
+  if (!teamPageId) {
+    if (DEMO_MODE) return { tasks: templatePreview(), error: null };
+    return { tasks: [], error: 'no-team' };
+  }
 
   try {
     let raw = await queryOnboarding(teamPageId);

@@ -83,6 +83,7 @@ const dict = {
       eyebrow: 'Bienvenido a tu equipo',
       entering: 'Entrando…',
       enter: 'Entrar',
+      demoEnter: 'continuar sin cresco.so (demo)',
     },
     welcome: {
       skip: 'saltar intro',
@@ -264,6 +265,7 @@ const dict = {
       eyebrow: 'Welcome to your team',
       entering: 'Signing in…',
       enter: 'Sign in',
+      demoEnter: 'continue without cresco.so (demo)',
     },
     welcome: {
       skip: 'skip intro',

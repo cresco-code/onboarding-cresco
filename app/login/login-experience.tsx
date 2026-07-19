@@ -45,7 +45,9 @@ export function LoginExperience() {
     return () => { cancelAnimationFrame(raf); scene.removeEventListener('mousemove', onMove); scene.removeEventListener('mouseleave', onLeave); };
   }, []);
 
-  const onEnter = async () => {
+  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
+  const onEnter = async (skipDomainHint = false) => {
     if (loading) return;
     setLoading(true);
     const next = params.get('next') ?? '/';
@@ -60,9 +62,9 @@ export function LoginExperience() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        // solo cuentas del workspace cresco.so (Google las pre-filtra con hd)
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        queryParams: { hd: process.env.NEXT_PUBLIC_TEAM_DOMAIN ?? 'cresco.so' },
+        // solo cuentas del workspace cresco.so (Google las pre-filtra con hd) — el botón demo lo omite a propósito
+        ...(skipDomainHint ? {} : { queryParams: { hd: process.env.NEXT_PUBLIC_TEAM_DOMAIN ?? 'cresco.so' } }),
       },
     });
     if (error) setLoading(false);
@@ -161,11 +163,16 @@ export function LoginExperience() {
       <div className={styles.ui}>
         <div className={styles.eye}>{ui.login.eyebrow}</div>
         <div className={styles.big}>cresc&#333;<span className={styles.d}>.</span></div>
-        <button className={`${styles.enter}${loading ? ' ' + styles.loading : ''}`} onClick={onEnter}>
+        <button className={`${styles.enter}${loading ? ' ' + styles.loading : ''}`} onClick={() => onEnter()}>
           <span className={styles.spin} />
           <span className={styles.lbl}>{loading ? ui.login.entering : ui.login.enter}</span>
           <span className={styles.arr}>→</span>
         </button>
+        {demoMode && (
+          <button className={styles.demoEnter} onClick={() => onEnter(true)}>
+            {ui.login.demoEnter}
+          </button>
+        )}
       </div>
     </div>
   );

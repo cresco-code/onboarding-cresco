@@ -11,6 +11,8 @@ import { Client } from '@notionhq/client';
 const NOTION_TOKEN = process.env.NOTION_TOKEN ?? process.env.NOTION_API_KEY;
 const TEAM_DATA_SOURCE_ID = process.env.NOTION_TEAM_DATA_SOURCE_ID;
 const ALLOWED_DOMAIN = process.env.TEAM_ALLOWED_DOMAIN ?? 'cresco.so';
+/** modo demo: cualquier cuenta de Google entra al onboarding general (nunca a /amedi ni /mogos, ver isCrescoDomain) */
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
 export interface TeamMember {
   name: string;
@@ -69,11 +71,18 @@ export async function isOnTeam(email: string): Promise<boolean> {
   return (await getTeamMember(email)) !== null;
 }
 
+/** true si el correo es del dominio de crescō (@cresco.so), sin excepción — el gate real de amedi/mogos */
+export function isCrescoDomain(email: string): boolean {
+  return (email ?? '').trim().toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`);
+}
+
 /**
- * Gate de acceso a onboarding: solo cuentas del workspace de crescō.
- * Los usuarios de onboarding son @cresco.so (no Gmail). El match contra Team
- * (getTeamMember) se usa para enriquecer el perfil, no para bloquear.
+ * Gate de acceso al onboarding general: cuentas del workspace de crescō,
+ * o cualquier cuenta de Google si NEXT_PUBLIC_DEMO_MODE=true (para demos —
+ * no afecta a isCrescoDomain, que sigue exigiendo @cresco.so en amedi/mogos).
+ * El match contra Team (getTeamMember) se usa para enriquecer el perfil, no para bloquear.
  */
 export function isAllowed(email: string): boolean {
-  return (email ?? '').trim().toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`);
+  if (DEMO_MODE) return true;
+  return isCrescoDomain(email);
 }
