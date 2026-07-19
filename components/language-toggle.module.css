@@ -11,6 +11,7 @@
   opacity: 0;
   transform: translateY(-10px);
   animation: toggleIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .indicator {
@@ -43,9 +44,18 @@
   cursor: pointer;
   color: #5c544a;
   transition: color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 .btn:hover {
   color: #1a1612;
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(61, 82, 64, 0.45);
+}
+.dark .btn:focus-visible {
+  box-shadow: 0 0 0 2px rgba(239, 234, 224, 0.55);
 }
 .on {
   color: #efeae0;

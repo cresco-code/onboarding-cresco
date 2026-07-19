@@ -71,6 +71,10 @@
 .skip.show{opacity:1}.skip:hover{color:#EFEAE0}
 @media(max-width:600px){.skip{top:24px;right:24px}}
 
+/* fila del toggle de idioma, un renglón por debajo de "saltar intro" — nunca se pisan */
+.langToggle{position:absolute;top:66px;right:40px;z-index:20}
+@media(max-width:600px){.langToggle{top:56px;right:24px}}
+
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:20;font-size:11px;
   color:rgba(239,234,224,.4);letter-spacing:-.005em;opacity:0;transition:opacity 1s ease}
 .hint.show{opacity:.7}

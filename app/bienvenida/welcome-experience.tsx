@@ -103,7 +103,7 @@ export function WelcomeExperience() {
         <span>cresc&#333;<span className={styles.d}>.</span></span>
       </div>
 
-      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 60 }} onClick={(e) => e.stopPropagation()}>
+      <div className={styles.langToggle} onClick={(e) => e.stopPropagation()}>
         <LanguageToggle variant="dark" />
       </div>
 
