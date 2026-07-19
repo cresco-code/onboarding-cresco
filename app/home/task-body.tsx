@@ -1,12 +1,19 @@
 'use client';
 
 import type { CBlock } from '@/lib/notion-content';
+import { translatedBody } from '@/lib/onboarding';
+import { useLocale } from '@/lib/i18n/locale-context';
+import { strings } from '@/lib/i18n/strings';
 import { NotionBlocks } from './notion-blocks';
 import styles from './home.module.css';
 
-/** renderiza el cuerpo de una tarea (contenido de Notion). Compartido por el lector y las cartas. */
+/** renderiza el cuerpo de una tarea (contenido de Notion, o su traducción en inglés). Compartido por el lector y las cartas. */
 export function TaskBody({ blocks, name }: { blocks: CBlock[] | null; name: string }) {
-  if (blocks === null) {
+  const { locale } = useLocale();
+  const T = strings(locale);
+  const effective = translatedBody(name, locale) ?? blocks;
+
+  if (effective === null) {
     return (
       <div className={styles.rloading}>
         <span className={styles.rspin} />
@@ -14,8 +21,8 @@ export function TaskBody({ blocks, name }: { blocks: CBlock[] | null; name: stri
     );
   }
 
-  const embed = blocks.find((b) => b.type === 'embed');
-  const rest = blocks.filter((b) => b.type !== 'embed');
+  const embed = effective.find((b) => b.type === 'embed');
+  const rest = effective.filter((b) => b.type !== 'embed');
 
   if (embed) {
     return (
@@ -33,10 +40,10 @@ export function TaskBody({ blocks, name }: { blocks: CBlock[] | null; name: stri
   return (
     <div className={styles.raction}>
       <div className={styles.inner}>
-        {blocks.length > 0 ? (
-          <NotionBlocks blocks={blocks} />
+        {effective.length > 0 ? (
+          <NotionBlocks blocks={effective} />
         ) : (
-          <p className={styles.rempty}>esta tarea aún no tiene contenido en Notion. agrégalo en la página de la tarea y aparecerá aquí.</p>
+          <p className={styles.rempty}>{T.body.empty}</p>
         )}
       </div>
     </div>

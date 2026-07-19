@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent, type CSSProperties } from 'react';
-import { phaseOf, type OnbItem, type Phase } from '@/lib/onboarding';
+import { phaseOf, phaseName, translateTask, type OnbItem, type Phase } from '@/lib/onboarding';
 import type { CBlock } from '@/lib/notion-content';
 import { getTaskContentAction } from '@/app/actions';
+import { useLocale } from '@/lib/i18n/locale-context';
+import { strings } from '@/lib/i18n/strings';
+import { LanguageToggle } from '@/components/language-toggle';
 import { TaskBody } from './task-body';
 import styles from './home.module.css';
 
@@ -21,6 +24,8 @@ export function TaskCards({
   onClose: () => void;
   firstName: string;
 }) {
+  const { locale } = useLocale();
+  const ui = strings(locale);
   const [order, setOrder] = useState<string[]>(() => tasks.filter((t) => !t.done).map((t) => t.id));
   const [d, setD] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -140,15 +145,16 @@ export function TaskCards({
       <div className={styles.fsBack} onClick={onClose} />
 
       <div className={styles.fsTop}>
-        <button className={styles.fsClose} onClick={onClose} aria-label="Volver a la lista">← lista</button>
+        <button className={styles.fsClose} onClick={onClose} aria-label={ui.cards.backToListAria}>{ui.cards.backToList}</button>
+        <LanguageToggle variant="dark" />
       </div>
 
       {!top ? (
         <div className={styles.fsDone}>
           <div className={styles.cdoneMark}>🌿</div>
-          <h2>Listo, {firstName}.</h2>
-          <p>Pasaste por todas tus cartas. Bienvenido de verdad al equipo.</p>
-          <button className={styles.fsDoneBtn} onClick={onClose}>volver a la lista</button>
+          <h2>{ui.cards.fsDoneTitle(firstName)}</h2>
+          <p>{ui.cards.fsDoneBody}</p>
+          <button className={styles.fsDoneBtn} onClick={onClose}>{ui.cards.fsDoneBtn}</button>
         </div>
       ) : (
         <>
@@ -159,7 +165,7 @@ export function TaskCards({
             onClick={() => commit('skip')}
           >
             <span className={styles.sideIcon}>↩</span>
-            <span className={styles.sideLabel}>luego</span>
+            <span className={styles.sideLabel}>{ui.cards.sideLater}</span>
           </button>
           <button
             className={`${styles.side} ${styles.sideR}`}
@@ -167,7 +173,7 @@ export function TaskCards({
             onClick={() => commit('done')}
           >
             <span className={styles.sideIcon}>✓</span>
-            <span className={styles.sideLabel}>hecho</span>
+            <span className={styles.sideLabel}>{ui.cards.sideDone}</span>
           </button>
 
           <div className={styles.fsStage}>
@@ -192,6 +198,7 @@ export function TaskCards({
               const ph = phaseOf(t.name);
               const phaseTasks = tasks.filter((x) => phaseOf(x.name).key === ph.key);
               const posInPhase = phaseTasks.findIndex((x) => x.id === t.id) + 1;
+              const tt = translateTask(t, locale);
               return (
                 <article
                   key={t.id}
@@ -203,16 +210,16 @@ export function TaskCards({
                 >
                   <div className={styles.fphase} style={{ backgroundColor: ph.color + '17', color: ph.color }}>
                     <span className={styles.fphaseDot} style={{ background: ph.color }} />
-                    <span className={styles.fphaseName}>{ph.name}</span>
-                    <span className={styles.fphasePos}>{posInPhase} de {phaseTasks.length}</span>
+                    <span className={styles.fphaseName}>{phaseName(ph, locale)}</span>
+                    <span className={styles.fphasePos}>{ui.cards.posInPhase(posInPhase, phaseTasks.length)}</span>
                   </div>
                   <div className={styles.fhead}>
                     {t.kind === 'read' ? (
-                      <span className={styles.kind}>📖 leer{t.readMins ? ` · ${t.readMins} min` : ''}</span>
+                      <span className={styles.kind}>{ui.cards.kindRead(t.readMins)}</span>
                     ) : (
-                      <span className={`${styles.kind} ${styles.act}`}>↗ acción</span>
+                      <span className={`${styles.kind} ${styles.act}`}>{ui.cards.kindAction}</span>
                     )}
-                    <h3 className={styles.fname}>{t.name}</h3>
+                    <h3 className={styles.fname}>{tt.name}</h3>
                   </div>
                   {isTop && <div className={styles.fbody}><TaskBody blocks={content} name={t.name} /></div>}
 
@@ -221,11 +228,11 @@ export function TaskCards({
                     <>
                       <div className={`${styles.wash} ${styles.washYes}`} style={{ opacity: yes }}>
                         <span className={styles.washIcon}>✓</span>
-                        <span className={styles.washLabel}>hecho</span>
+                        <span className={styles.washLabel}>{ui.cards.sideDone}</span>
                       </div>
                       <div className={`${styles.wash} ${styles.washNo}`} style={{ opacity: no }}>
                         <span className={styles.washIcon}>↩</span>
-                        <span className={styles.washLabel}>luego</span>
+                        <span className={styles.washLabel}>{ui.cards.sideLater}</span>
                       </div>
                     </>
                   )}
@@ -246,18 +253,18 @@ export function TaskCards({
               ✓
             </div>
             <div className={styles.ptDone}>
-              Completaste <b style={{ color: phaseDone.completed.color }}>{phaseDone.completed.name}</b>
+              {ui.cards.phaseCompleted} <b style={{ color: phaseDone.completed.color }}>{phaseName(phaseDone.completed, locale)}</b>
             </div>
             <div className={styles.ptArrow}>↓</div>
             <div className={styles.ptNext}>
-              <span className={styles.ptNextEye}>sigue</span>
+              <span className={styles.ptNextEye}>{ui.cards.phaseNext}</span>
               <span className={styles.ptNextName} style={{ color: phaseDone.next.color }}>
                 <span className={styles.ptDot} style={{ background: phaseDone.next.color }} />
-                {phaseDone.next.name}
+                {phaseName(phaseDone.next, locale)}
               </span>
             </div>
             <button className={styles.ptBtn} onClick={() => setPhaseDone(null)}>
-              Seguir <span className={styles.mfsArr}>→</span>
+              {ui.cards.phaseContinue} <span className={styles.mfsArr}>→</span>
             </button>
           </div>
         </div>

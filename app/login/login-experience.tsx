@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase/client';
+import { useLocale } from '@/lib/i18n/locale-context';
+import { strings } from '@/lib/i18n/strings';
+import { LanguageToggle } from '@/components/language-toggle';
 import styles from './login.module.css';
 
 export function LoginExperience() {
@@ -10,6 +13,8 @@ export function LoginExperience() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const params = useSearchParams();
+  const { locale } = useLocale();
+  const ui = strings(locale);
 
   // parallax por profundidad
   useEffect(() => {
@@ -151,12 +156,14 @@ export function LoginExperience() {
 
       <div className={styles.grain} />
 
+      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 60 }}><LanguageToggle variant="dark" /></div>
+
       <div className={styles.ui}>
-        <div className={styles.eye}>Bienvenido a tu equipo</div>
+        <div className={styles.eye}>{ui.login.eyebrow}</div>
         <div className={styles.big}>cresc&#333;<span className={styles.d}>.</span></div>
         <button className={`${styles.enter}${loading ? ' ' + styles.loading : ''}`} onClick={onEnter}>
           <span className={styles.spin} />
-          <span className={styles.lbl}>{loading ? 'Entrando…' : 'Entrar'}</span>
+          <span className={styles.lbl}>{loading ? ui.login.entering : ui.login.enter}</span>
           <span className={styles.arr}>→</span>
         </button>
       </div>

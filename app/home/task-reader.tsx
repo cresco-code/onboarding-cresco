@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { OnbItem } from '@/lib/onboarding';
+import { translateTask, type OnbItem } from '@/lib/onboarding';
 import type { CBlock } from '@/lib/notion-content';
 import { getTaskContentAction } from '@/app/actions';
+import { useLocale } from '@/lib/i18n/locale-context';
+import { strings } from '@/lib/i18n/strings';
 import { TaskBody } from './task-body';
 import styles from './home.module.css';
 
@@ -19,6 +21,9 @@ export function TaskReader({
   onToggle: () => void;
 }) {
   const [blocks, setBlocks] = useState<CBlock[] | null>(null);
+  const { locale } = useLocale();
+  const t = strings(locale);
+  const tr = translateTask(item, locale);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -50,10 +55,10 @@ export function TaskReader({
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.reader} onClick={(e) => e.stopPropagation()}>
         <div className={styles.rbar}>
-          <button className={styles.rback} onClick={onClose} aria-label="Volver">←</button>
-          <div className={styles.rtitle}>{item.name}</div>
+          <button className={styles.rback} onClick={onClose} aria-label={t.reader.backAria}>←</button>
+          <div className={styles.rtitle}>{tr.name}</div>
           <button className={`${styles.rdone}${done ? ' ' + styles.on : ''}`} onClick={onToggle}>
-            {done ? '✓ Hecho' : 'Marcar como hecho'}
+            {done ? t.reader.done : t.reader.markDone}
           </button>
         </div>
 

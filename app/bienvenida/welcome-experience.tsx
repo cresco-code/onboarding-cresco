@@ -2,16 +2,41 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocale } from '@/lib/i18n/locale-context';
+import { strings } from '@/lib/i18n/strings';
+import type { Locale } from '@/lib/i18n/locale';
+import { LanguageToggle } from '@/components/language-toggle';
 import styles from './welcome.module.css';
 
 const ORDER = ['intro', 's1', 's2', 's3', 's4', 'done'] as const;
 const DONE = ORDER.length - 1;
+
+/** las 5 líneas del slide deck, con el fragmento acentuado aparte para el <span> */
+const SLIDES: Record<Locale, { pre: string; accent: string; post?: string }[]> = {
+  es: [
+    { pre: 'Antes de arrancar, un poco sobre ', accent: 'crescō.' },
+    { pre: 'Ayudamos a empresas y personas a través de la ', accent: 'tecnología.' },
+    { pre: 'Hacemos ', accent: 'crecer', post: ' sus proyectos.' },
+    { pre: 'Les enseñamos a hacer ', accent: 'más con menos.' },
+    { pre: 'Hacemos del proceso una ', accent: 'experiencia.' },
+  ],
+  en: [
+    { pre: 'Before we start, a bit about ', accent: 'crescō.' },
+    { pre: 'We help companies and people through ', accent: 'technology.' },
+    { pre: 'We help ', accent: 'grow', post: ' their projects.' },
+    { pre: 'We teach them to do ', accent: 'more with less.' },
+    { pre: 'We turn the process into an ', accent: 'experience.' },
+  ],
+};
 
 export function WelcomeExperience() {
   const [active, setActive] = useState<number | null>(0);
   const [leaving, setLeaving] = useState<number | null>(null);
   const busy = useRef(false);
   const router = useRouter();
+  const { locale } = useLocale();
+  const ui = strings(locale);
+  const slides = SLIDES[locale];
 
   const eff = active ?? leaving ?? 0;
   const name = ORDER[eff];
@@ -78,11 +103,15 @@ export function WelcomeExperience() {
         <span>cresc&#333;<span className={styles.d}>.</span></span>
       </div>
 
+      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 60 }} onClick={(e) => e.stopPropagation()}>
+        <LanguageToggle variant="dark" />
+      </div>
+
       <button
         className={`${styles.skip}${onSlide ? ' ' + styles.show : ''}`}
         onClick={(e) => { e.stopPropagation(); go(DONE); }}
       >
-        saltar intro
+        {ui.welcome.skip}
       </button>
 
       <div className={styles.stage}>
@@ -90,7 +119,7 @@ export function WelcomeExperience() {
         <section className={cls(0)}>
           <div className={styles.rise} style={{ ['--d' as string]: '.2s' }}>
             <div className={styles.line}>
-              Antes de arrancar, un poco sobre <span className={styles.ac}>crescō.</span>
+              {slides[0].pre}<span className={styles.ac}>{slides[0].accent}</span>{slides[0].post}
             </div>
           </div>
         </section>
@@ -99,7 +128,7 @@ export function WelcomeExperience() {
         <section className={cls(1)}>
           <div className={styles.rise} style={{ ['--d' as string]: '.2s' }}>
             <div className={styles.line}>
-              Ayudamos a empresas y personas a través de la <span className={styles.ac}>tecnología.</span>
+              {slides[1].pre}<span className={styles.ac}>{slides[1].accent}</span>{slides[1].post}
             </div>
           </div>
         </section>
@@ -108,7 +137,7 @@ export function WelcomeExperience() {
         <section className={cls(2)}>
           <div className={styles.rise} style={{ ['--d' as string]: '.2s' }}>
             <div className={styles.line}>
-              Hacemos <span className={styles.ac}>crecer</span> sus proyectos.
+              {slides[2].pre}<span className={styles.ac}>{slides[2].accent}</span>{slides[2].post}
             </div>
           </div>
         </section>
@@ -117,7 +146,7 @@ export function WelcomeExperience() {
         <section className={cls(3)}>
           <div className={styles.rise} style={{ ['--d' as string]: '.2s' }}>
             <div className={styles.line}>
-              Les enseñamos a hacer <span className={styles.ac}>más con menos.</span>
+              {slides[3].pre}<span className={styles.ac}>{slides[3].accent}</span>{slides[3].post}
             </div>
           </div>
         </section>
@@ -126,7 +155,7 @@ export function WelcomeExperience() {
         <section className={cls(4)}>
           <div className={styles.rise} style={{ ['--d' as string]: '.2s' }}>
             <div className={styles.line}>
-              Hacemos del proceso una <span className={styles.ac}>experiencia.</span>
+              {slides[4].pre}<span className={styles.ac}>{slides[4].accent}</span>{slides[4].post}
             </div>
           </div>
         </section>
@@ -146,17 +175,17 @@ export function WelcomeExperience() {
             <div className={styles.ctr}>🌱</div>
           </div>
           <div className={`${styles.big} ${styles.rise}`} style={{ ['--d' as string]: '.3s' }}>
-            Nosotros también crecemos.
+            {ui.welcome.doneLine}
           </div>
           <div className={`${styles.below} ${styles.rise}`} style={{ ['--d' as string]: '.5s' }}>
-            Día cero, listo para empezar.
+            {ui.welcome.belowLine}
           </div>
           <button
             className={`${styles.adv} ${styles.rise}`}
             style={{ ['--d' as string]: '.7s' }}
             onClick={(e) => { e.stopPropagation(); finish(); }}
           >
-            Comenzar <span className={styles.arr}>→</span>
+            {ui.welcome.start} <span className={styles.arr}>→</span>
           </button>
         </section>
       </div>
@@ -168,7 +197,7 @@ export function WelcomeExperience() {
       </div>
 
       <div className={`${styles.hint}${name === 'intro' ? ' ' + styles.show : ''}`}>
-        click, espacio o → para avanzar
+        {ui.welcome.hint}
       </div>
     </div>
   );

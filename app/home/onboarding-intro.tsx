@@ -2,16 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import type { Phase } from '@/lib/onboarding';
+import { useLocale } from '@/lib/i18n/locale-context';
+import { strings } from '@/lib/i18n/strings';
+import { LanguageToggle } from '@/components/language-toggle';
 import styles from './home.module.css';
-
-/** El manifiesto de crescō — cómo trabajamos. Editorial, numerado, premium. */
-const MANIFESTO: { t: string; d: string }[] = [
-  { t: 'Pensamos antes de ejecutar.', d: 'Levantamos el sistema antes que la herramienta. La herramienta amplifica lo que ya existe.' },
-  { t: 'Delegamos a la AI lo repetible.', d: 'La AI propone, las personas deciden. Nunca al revés.' },
-  { t: 'Somos puntuales.', d: 'Prometemos poco y cumplimos grande. La puntualidad respeta el tiempo del cliente.' },
-  { t: 'Somos honestos.', d: 'Decimos lo que falta y lo que nos costó. No vendemos lo que no tenemos.' },
-  { t: 'Hacemos del proceso una experiencia.', d: 'Cada entrega lee como un libro — no como un SaaS.' },
-];
 
 /**
  * El umbral del onboarding:
@@ -29,6 +23,9 @@ export function OnboardingIntro({
   onComplete: () => void;
 }) {
   const [sub, setSub] = useState<'welcome' | 'manifesto' | 'phase'>('welcome');
+  const { locale } = useLocale();
+  const ui = strings(locale);
+  const MANIFESTO = ui.intro.manifesto;
 
   useEffect(() => {
     if (sub !== 'phase') return;
@@ -40,11 +37,11 @@ export function OnboardingIntro({
     return (
       <div className={styles.mfs} onClick={onComplete}>
         <div className={styles.phaseIntro}>
-          <div className={styles.piEye} style={{ ['--d' as string]: '.1s' }}>Empieza tu onboarding</div>
-          <div className={styles.piFase} style={{ ['--d' as string]: '.35s' }}>Fase 1</div>
+          <div className={styles.piEye} style={{ ['--d' as string]: '.1s' }}>{ui.intro.startOnboarding}</div>
+          <div className={styles.piFase} style={{ ['--d' as string]: '.35s' }}>{ui.intro.phaseWord}</div>
           <div className={styles.piName} style={{ ['--d' as string]: '.7s', color: firstPhase.color }}>
             <span className={styles.piDot} style={{ background: firstPhase.color }} />
-            {firstPhase.name}
+            {locale === 'en' ? firstPhase.nameEn : firstPhase.name}
           </div>
         </div>
       </div>
@@ -54,11 +51,12 @@ export function OnboardingIntro({
   if (sub === 'manifesto') {
     return (
       <div className={styles.mfs}>
+        <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 60 }}><LanguageToggle /></div>
         <div className={styles.mfsGlow} />
         <div className={styles.manifesto}>
-          <div className={styles.mfEye} style={{ ['--d' as string]: '.1s' }}>Cómo trabajamos</div>
+          <div className={styles.mfEye} style={{ ['--d' as string]: '.1s' }}>{ui.intro.howWeWork}</div>
           <h2 className={styles.mfTitle} style={{ ['--d' as string]: '.22s' }}>
-            Nuestro manifiesto.
+            {ui.intro.manifestoTitle}
           </h2>
           <ol className={styles.mfList}>
             {MANIFESTO.map((m, i) => (
@@ -76,7 +74,7 @@ export function OnboardingIntro({
             style={{ ['--d' as string]: `${0.5 + MANIFESTO.length * 0.22 + 0.25}s` }}
             onClick={() => setSub('phase')}
           >
-            Estoy listo <span className={styles.mfsArr}>→</span>
+            {ui.intro.ready} <span className={styles.mfsArr}>→</span>
           </button>
         </div>
       </div>
@@ -85,20 +83,21 @@ export function OnboardingIntro({
 
   return (
     <div className={styles.mfs}>
+      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 60 }}><LanguageToggle /></div>
       <div className={styles.mfsGlow} />
       <div className={styles.mfsInner}>
-        <div className={styles.mfsEye} style={{ ['--d' as string]: '.1s' }}>¡Bienvenido a crescō!</div>
-        <h1 className={styles.mfsHola} style={{ ['--d' as string]: '.28s' }}>Hola, {firstName}.</h1>
+        <div className={styles.mfsEye} style={{ ['--d' as string]: '.1s' }}>{ui.intro.welcomeEyebrow}</div>
+        <h1 className={styles.mfsHola} style={{ ['--d' as string]: '.28s' }}>{ui.intro.hello(firstName)}</h1>
         <div className={styles.mfsBody}>
           <p style={{ ['--d' as string]: '.6s' }}>
-            Estamos muy felices de tenerte como parte del equipo.
+            {ui.intro.welcomeP1}
           </p>
           <p style={{ ['--d' as string]: '.82s' }}>
-            Estamos seguros de que vamos a <em>crecer juntos</em>.
+            {ui.intro.welcomeP2Pre}<em>{ui.intro.welcomeP2Em}</em>{ui.intro.welcomeP2Post}
           </p>
         </div>
         <button className={styles.mfsBtn} style={{ ['--d' as string]: '1.2s' }} onClick={() => setSub('manifesto')}>
-          Cómo trabajamos <span className={styles.mfsArr}>→</span>
+          {ui.intro.howWeWork} <span className={styles.mfsArr}>→</span>
         </button>
       </div>
     </div>

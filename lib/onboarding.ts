@@ -1,4 +1,7 @@
 import { Client } from '@notionhq/client';
+import type { CBlock } from './notion-content';
+import type { Locale } from './i18n/locale';
+import { TASK_BODY_EN } from './i18n/task-body-en';
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN ?? process.env.NOTION_API_KEY;
 const TASKS_DATA_SOURCE_ID =
@@ -50,6 +53,9 @@ interface SeedItem {
   steps?: string[];
   ctaLabel?: string;
   ctaUrl?: string;
+  /** traducción de UI (código, no vive en Notion) — ver lib/i18n/task-body-en.ts para el cuerpo */
+  nameEn?: string;
+  descriptionEn?: string;
 }
 
 const ONBOARDING: SeedItem[] = [
@@ -64,6 +70,8 @@ const ONBOARDING: SeedItem[] = [
     ],
     ctaLabel: 'Abrir Gmail',
     ctaUrl: 'https://mail.google.com',
+    nameEn: 'Accept your Google Workspace',
+    descriptionEn: 'Your @cresco.so account is the key to everything else. Start here.',
   },
   {
     name: 'Entra a Slack con tu correo',
@@ -72,6 +80,8 @@ const ONBOARDING: SeedItem[] = [
     steps: ['Abre Slack e inicia sesión con tu correo @cresco.so', 'Activa las notificaciones', 'Preséntate en #general'],
     ctaLabel: 'Abrir Slack',
     ctaUrl: 'https://slack.com/signin',
+    nameEn: 'Sign in to Slack with your email',
+    descriptionEn: 'Slack is where the team talks. Every client and project has its own channel.',
   },
   {
     name: 'Entra a Notion con tu correo',
@@ -80,26 +90,36 @@ const ONBOARDING: SeedItem[] = [
     steps: ['Abre Notion e inicia sesión con Google (@cresco.so)', 'Acepta la invitación al workspace de crescō', 'Encuentra el HQ del estudio'],
     ctaLabel: 'Abrir Notion',
     ctaUrl: 'https://notion.so',
+    nameEn: 'Sign in to Notion with your email',
+    descriptionEn: "Notion is the studio's memory: projects, tasks, meetings and wiki.",
   },
   {
     name: 'Configura GitHub',
     description: 'Tu acceso al código del estudio: únete a la organización y asegura tu cuenta.',
     kind: 'action',
+    nameEn: 'Set up GitHub',
+    descriptionEn: 'Your access to the studio’s code: join the organization and secure your account.',
   },
   {
     name: 'Configura el repo de tu cliente',
     description: 'Clona el proyecto en el que vas a trabajar y levántalo en tu máquina.',
     kind: 'action',
+    nameEn: "Set up your client's repo",
+    descriptionEn: "Clone the project you'll be working on and get it running on your machine.",
   },
   {
     name: 'Instala Claude Code',
     description: 'La terminal de IA con la que trabajamos: corre los skills y agentes del estudio.',
     kind: 'action',
+    nameEn: 'Install Claude Code',
+    descriptionEn: "The AI terminal we work with: runs the studio's skills and agents.",
   },
   {
     name: 'Conecta tus conectores en Notion',
     description: 'Conecta Google Calendar, Slack, GitHub y Gmail a Notion para que todo se cruce.',
     kind: 'action',
+    nameEn: 'Connect your connectors in Notion',
+    descriptionEn: 'Connect Google Calendar, Slack, GitHub and Gmail to Notion so everything ties together.',
   },
   {
     name: 'Conoce el stack: con qué construimos',
@@ -107,6 +127,8 @@ const ONBOARDING: SeedItem[] = [
     kind: 'read',
     embedUrl: `${DESIGN}/stack/`,
     readMins: 4,
+    nameEn: 'Know the stack: what we build with',
+    descriptionEn: "crescō's monorepo: Next, Expo, NestJS, Prisma, Supabase, Render, DigitalOcean.",
   },
   {
     name: 'Lee la metodología de crescō',
@@ -114,6 +136,8 @@ const ONBOARDING: SeedItem[] = [
     kind: 'read',
     embedUrl: `${DESIGN}/metodologia/`,
     readMins: 4,
+    nameEn: "Read crescō's methodology",
+    descriptionEn: 'How we work: from the meeting to execution. AI proposes, people decide.',
   },
   {
     name: 'Conoce tu día a día: My Work y el triage',
@@ -121,6 +145,8 @@ const ONBOARDING: SeedItem[] = [
     kind: 'read',
     embedUrl: `${DESIGN}/mi-trabajo/`,
     readMins: 3,
+    nameEn: 'Know your day to day: My Work and triage',
+    descriptionEn: 'Your personal board and the Approve, Reject and Convert into Project buttons.',
   },
   {
     name: 'Entiende el sistema: teamspace y la base Tasks',
@@ -128,6 +154,8 @@ const ONBOARDING: SeedItem[] = [
     kind: 'read',
     embedUrl: `${DESIGN}/sistema-tareas/`,
     readMins: 4,
+    nameEn: 'Understand the system: the teamspace and the Tasks base',
+    descriptionEn: 'The crescō teamspace and the Tasks base: their relationships and lifecycle.',
   },
   {
     name: 'Conoce el workspace',
@@ -135,33 +163,45 @@ const ONBOARDING: SeedItem[] = [
     kind: 'read',
     embedUrl: `${DESIGN}/hq/`,
     readMins: 3,
+    nameEn: 'Know the workspace',
+    descriptionEn: "The Notion map: the studio's areas and the six bases that hold everything together.",
   },
   {
     name: 'crescō skills: la fábrica del equipo',
     description: 'Qué son los skills, cómo instalarlos y cómo crear los tuyos.',
     kind: 'read',
     readMins: 4,
+    nameEn: 'crescō skills: the team factory',
+    descriptionEn: 'What skills are, how to install them, and how to build your own.',
   },
   {
     name: 'El sistema operativo del estudio',
     description: 'Las tres capas —homes, skills y agentes— sobre las seis bases de Notion.',
     kind: 'read',
     readMins: 3,
+    nameEn: "The studio's operating system",
+    descriptionEn: 'The three layers — homes, skills, and agents — sitting on top of Notion’s six bases.',
   },
   {
     name: 'Graba tu primera reunión',
     description: 'Cómo documentamos: cada reunión se graba y se transcribe en Notion.',
     kind: 'action',
+    nameEn: 'Record your first meeting',
+    descriptionEn: 'How we document: every meeting is recorded and transcribed in Notion.',
   },
   {
     name: 'Conoce a tu cliente y proyecto',
     description: 'Abre tu proyecto en Notion y empápate del contexto antes de construir.',
     kind: 'action',
+    nameEn: 'Get to know your client and project',
+    descriptionEn: 'Open your project in Notion and soak up the context before you start building.',
   },
   {
     name: 'Agarra tu primera tarea',
     description: 'Toma algo del backlog, asígnatela y muévela a in progress. A construir.',
     kind: 'action',
+    nameEn: 'Grab your first task',
+    descriptionEn: 'Grab something from the backlog, assign it to yourself, and move it to in progress. Time to build.',
   },
 ];
 
@@ -169,15 +209,20 @@ const ONBOARDING: SeedItem[] = [
 export interface Phase {
   key: string;
   name: string;
+  nameEn: string;
   color: string;
 }
 export const PHASES: Phase[] = [
-  { key: 'accesos', name: 'Accesos', color: '#5A6B4E' },
-  { key: 'herramientas', name: 'Herramientas', color: '#A8755A' },
-  { key: 'aprende', name: 'Cómo trabajamos', color: '#5B6E7A' },
-  { key: 'reuniones', name: 'Reuniones', color: '#B08A4F' },
-  { key: 'primeros', name: 'Primeros pasos', color: '#9A6B5E' },
+  { key: 'accesos', name: 'Accesos', nameEn: 'Access', color: '#5A6B4E' },
+  { key: 'herramientas', name: 'Herramientas', nameEn: 'Tools', color: '#A8755A' },
+  { key: 'aprende', name: 'Cómo trabajamos', nameEn: 'How we work', color: '#5B6E7A' },
+  { key: 'reuniones', name: 'Reuniones', nameEn: 'Meetings', color: '#B08A4F' },
+  { key: 'primeros', name: 'Primeros pasos', nameEn: 'First steps', color: '#9A6B5E' },
 ];
+/** nombre de la fase en el idioma pedido */
+export function phaseName(phase: Phase, locale: Locale): string {
+  return locale === 'en' ? phase.nameEn : phase.name;
+}
 const PHASE_OF: Record<string, string> = {
   'Acepta tu Google Workspace': 'accesos',
   'Entra a Slack con tu correo': 'accesos',
@@ -205,6 +250,24 @@ export function phaseOf(name: string): Phase {
 
 const notion = () => new Client({ auth: NOTION_TOKEN });
 const norm = (s: string) => s.trim().toLowerCase();
+
+/**
+ * Traduce nombre + descripción de una tarea al inglés (código, no Notion).
+ * Si la tarea no matchea la plantilla (extra creada a mano en Notion), se
+ * muestra tal cual quedó en Notion — igual que hace enrich() con el resto.
+ */
+export function translateTask(item: OnbItem, locale: Locale): OnbItem {
+  if (locale !== 'en') return item;
+  const m = ONBOARDING.find((o) => norm(o.name) === norm(item.name));
+  if (!m?.nameEn) return item;
+  return { ...item, name: m.nameEn, blurb: m.descriptionEn ?? item.blurb };
+}
+
+/** cuerpo en inglés de una tarea de la plantilla, si existe (ver lib/i18n/task-body-en.ts) */
+export function translatedBody(name: string, locale: Locale): CBlock[] | undefined {
+  if (locale !== 'en') return undefined;
+  return TASK_BODY_EN[norm(name)];
+}
 
 /** UX por nombre: lo técnico (kind/embed/steps/CTA) que no vive en Notion */
 function enrich(name: string): Omit<SeedItem, 'name' | 'description'> {
