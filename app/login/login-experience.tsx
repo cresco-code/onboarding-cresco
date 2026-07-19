@@ -63,8 +63,13 @@ export function LoginExperience() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        // solo cuentas del workspace cresco.so (Google las pre-filtra con hd) — el botón demo lo omite a propósito
-        ...(skipDomainHint ? {} : { queryParams: { hd: process.env.NEXT_PUBLIC_TEAM_DOMAIN ?? 'cresco.so' } }),
+        queryParams: {
+          // fuerza el selector de cuenta de Google en vez de re-loguear en silencio con la sesión
+          // que quedó activa en el navegador — así "salir" sí te deja entrar con otra cuenta
+          prompt: 'select_account',
+          // solo cuentas del workspace cresco.so (Google las pre-filtra con hd) — el botón demo lo omite a propósito
+          ...(skipDomainHint ? {} : { hd: process.env.NEXT_PUBLIC_TEAM_DOMAIN ?? 'cresco.so' }),
+        },
       },
     });
     if (error) setLoading(false);
