@@ -243,9 +243,10 @@ const PHASE_OF: Record<string, string> = {
   'Conoce a tu cliente y proyecto': 'primeros',
   'Agarra tu primera tarea': 'primeros',
 };
-/** La fase de una tarea (por nombre). Cae a "Primeros pasos" si no matchea. */
+/** La fase de una tarea (por nombre, en cualquiera de los dos idiomas). Cae a "Primeros pasos" si no matchea. */
 export function phaseOf(name: string): Phase {
-  const key = PHASE_OF[name.trim()] ?? 'primeros';
+  const m = matchOnboarding(name);
+  const key = PHASE_OF[(m?.name ?? name).trim()] ?? 'primeros';
   return PHASES.find((p) => p.key === key) ?? PHASES[PHASES.length - 1];
 }
 
@@ -253,26 +254,47 @@ const notion = () => new Client({ auth: NOTION_TOKEN });
 const norm = (s: string) => s.trim().toLowerCase();
 
 /**
- * Traduce nombre + descripción de una tarea al inglés (código, no Notion).
- * Si la tarea no matchea la plantilla (extra creada a mano en Notion), se
- * muestra tal cual quedó en Notion — igual que hace enrich() con el resto.
+ * Matchea una tarea (por su nombre en Notion) contra la plantilla, en CUALQUIERA
+ * de los dos idiomas — el skill de onboarding puede sembrar el nombre en español
+ * (default) o en inglés (language: en), y las dos formas tienen que reconocerse.
  */
-export function translateTask(item: OnbItem, locale: Locale): OnbItem {
-  if (locale !== 'en') return item;
-  const m = ONBOARDING.find((o) => norm(o.name) === norm(item.name));
-  if (!m?.nameEn) return item;
-  return { ...item, name: m.nameEn, blurb: m.descriptionEn ?? item.blurb };
+function matchOnboarding(name: string): SeedItem | undefined {
+  const n = norm(name);
+  return ONBOARDING.find((o) => norm(o.name) === n || (o.nameEn && norm(o.nameEn) === n));
 }
 
-/** cuerpo en inglés de una tarea de la plantilla, si existe (ver lib/i18n/task-body-en.ts) */
+/**
+ * Traduce nombre + descripción de una tarea al idioma pedido (código, no Notion).
+ * Funciona en las dos direcciones: si Notion tiene el nombre en español y el
+ * viewer pidió inglés, traduce; si Notion ya tiene el nombre en inglés (sembrado
+ * por el skill en modo demo/EN) y el viewer pidió español, traduce de vuelta.
+ * Si ya está en el idioma pedido, se deja tal cual — respeta ediciones manuales
+ * hechas directo en Notion. Si la tarea no matchea la plantilla (extra creada a
+ * mano), se muestra tal cual quedó en Notion — igual que hace enrich() con el resto.
+ */
+export function translateTask(item: OnbItem, locale: Locale): OnbItem {
+  const m = matchOnboarding(item.name);
+  if (!m) return item;
+  const storedInEnglish = !!m.nameEn && norm(m.nameEn) === norm(item.name);
+  if (locale === 'en' && !storedInEnglish && m.nameEn) {
+    return { ...item, name: m.nameEn, blurb: m.descriptionEn ?? item.blurb };
+  }
+  if (locale === 'es' && storedInEnglish) {
+    return { ...item, name: m.name, blurb: m.description };
+  }
+  return item;
+}
+
+/** cuerpo en inglés de una tarea de la plantilla, si existe (ver lib/i18n/task-body-en.ts) — matchea por cualquiera de los dos idiomas */
 export function translatedBody(name: string, locale: Locale): CBlock[] | undefined {
   if (locale !== 'en') return undefined;
-  return TASK_BODY_EN[norm(name)];
+  const m = matchOnboarding(name);
+  return m ? TASK_BODY_EN[norm(m.name)] : undefined;
 }
 
 /** UX por nombre: lo técnico (kind/embed/steps/CTA) que no vive en Notion */
 function enrich(name: string): Omit<SeedItem, 'name' | 'description'> {
-  const m = ONBOARDING.find((o) => norm(o.name) === norm(name));
+  const m = matchOnboarding(name);
   if (!m) return { kind: 'action' };
   const { name: _n, description: _d, ...ux } = m;
   return ux;
@@ -377,7 +399,8 @@ export async function getOnboardingTasks(teamPageId: string | null): Promise<Onb
     }
 
     const orderOf = (name: string) => {
-      const i = ONBOARDING.findIndex((o) => norm(o.name) === norm(name));
+      const n = norm(name);
+      const i = ONBOARDING.findIndex((o) => norm(o.name) === n || (o.nameEn && norm(o.nameEn) === n));
       return i === -1 ? ONBOARDING.length + 1 : i; // extras de Notion (sin plantilla) al final
     };
 
