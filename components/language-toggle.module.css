@@ -1,39 +1,93 @@
 .toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  border: 0.5pt solid rgba(0, 0, 0, 0.14);
+  border: 0.5pt solid rgba(26, 22, 18, 0.16);
   border-radius: 99px;
-  padding: 2px;
+  padding: 4px;
   gap: 2px;
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(26, 22, 18, 0.03);
   flex-shrink: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+  animation: toggleIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.15s forwards;
 }
+
+.indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 5px);
+  border-radius: 99px;
+  background: #3d5240;
+  box-shadow: 0 2px 8px -2px rgba(26, 22, 18, 0.35);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.indicatorOn {
+  transform: translateX(calc(100% + 2px));
+}
+
 .btn {
+  position: relative;
+  z-index: 1;
   border: none;
   background: transparent;
   font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 5px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 8px 18px;
+  min-width: 46px;
   border-radius: 99px;
   cursor: pointer;
-  color: inherit;
-  opacity: 0.55;
-  transition: 0.2s ease;
+  color: #5c544a;
+  transition: color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .btn:hover {
-  opacity: 0.85;
+  color: #1a1612;
 }
 .on {
-  opacity: 1;
-  background: rgba(0, 0, 0, 0.08);
+  color: #efeae0;
+}
+.on:hover {
+  color: #efeae0;
 }
 
+@keyframes toggleIn {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* variante para fondos oscuros/escénicos (login, bienvenida, cartas) */
 .dark {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(239, 234, 224, 0.28);
+  background: rgba(239, 234, 224, 0.06);
+}
+.dark .indicator {
+  background: #7e9a80;
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.45);
+}
+.dark .btn {
+  color: rgba(239, 234, 224, 0.6);
+}
+.dark .btn:hover {
+  color: #efeae0;
 }
 .dark .on {
-  background: rgba(255, 255, 255, 0.16);
+  color: #1a1612;
+}
+.dark .on:hover {
+  color: #1a1612;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle {
+    animation-duration: 0.01ms;
+  }
+  .indicator {
+    transition-duration: 0.01ms;
+  }
 }

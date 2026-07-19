@@ -8,6 +8,7 @@ export function LanguageToggle({ variant = 'light', className }: { variant?: 'li
   const { locale, setLocale } = useLocale();
   return (
     <div className={`${styles.toggle}${variant === 'dark' ? ' ' + styles.dark : ''}${className ? ' ' + className : ''}`}>
+      <span className={`${styles.indicator}${locale === 'en' ? ' ' + styles.indicatorOn : ''}`} aria-hidden="true" />
       <button
         className={`${styles.btn}${locale === 'es' ? ' ' + styles.on : ''}`}
         onClick={() => setLocale('es')}
