@@ -163,7 +163,7 @@ export function LoginExperience() {
 
       <div className={styles.grain} />
 
-      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 60 }}><LanguageToggle variant="dark" /></div>
+      <div style={{ position: 'fixed', top: 20, right: 24, zIndex: 60 }}><LanguageToggle /></div>
 
       <div className={styles.ui}>
         <div className={styles.eye}>{ui.login.eyebrow}</div>

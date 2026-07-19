@@ -57,10 +57,12 @@
 .dark .btn:focus-visible {
   box-shadow: 0 0 0 2px rgba(239, 234, 224, 0.55);
 }
-.on {
-  color: #efeae0;
-}
-.on:hover {
+/* selector compuesto a propósito: (0,2,0) le gana SIEMPRE a .btn/.dark .btn sin
+   depender del orden del bundle final — con selectores sueltos de igual
+   especificidad, el build de producción puede terminar concatenando las reglas
+   en un orden distinto al del archivo fuente y el activo/inactivo se invierte */
+.btn.on,
+.btn.on:hover {
   color: #efeae0;
 }
 
@@ -86,10 +88,9 @@
 .dark .btn:hover {
   color: #efeae0;
 }
-.dark .on {
-  color: #1a1612;
-}
-.dark .on:hover {
+/* (0,3,0) — le gana a .dark .btn (0,2,0) sin depender del orden, mismo motivo que arriba */
+.dark .btn.on,
+.dark .btn.on:hover {
   color: #1a1612;
 }
 
